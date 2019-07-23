@@ -1,0 +1,35 @@
+import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {Categorie} from './categorie.model';
+
+@model({settings: {}})
+export class Definitie extends Entity {
+  @property({
+    type: 'number',
+    id: true,
+  })
+  ID?: number;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  naam: string;
+
+  @property({
+    type: 'string',
+  })
+  tekst?: string;
+
+  @belongsTo(() => Categorie)
+  categorieID: number;
+
+  constructor(data?: Partial<Definitie>) {
+    super(data);
+  }
+}
+
+export interface DefinitieRelations {
+  // describe navigational properties here
+}
+
+export type DefinitieWithRelations = Definitie & DefinitieRelations;
