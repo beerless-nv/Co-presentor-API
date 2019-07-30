@@ -64,4 +64,4 @@ typings/
 *.tsbuildinfo
 
 # Hide credentials from github
-./src/datasources/my-sqldb.datasource.json
+src/datasources/my-sqldb.datasource.json

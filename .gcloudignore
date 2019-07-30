@@ -15,9 +15,3 @@
 
 # Node.js dependencies:
 node_modules/
-
-# Datasource connection variables
-src/datasources/my-sqldb.datasource.json
-
-# App.yml config
-app.yml
