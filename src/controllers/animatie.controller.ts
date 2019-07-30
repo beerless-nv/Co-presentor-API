@@ -23,8 +23,9 @@ import {AnimatieRepository} from '../repositories';
 export class AnimatieController {
   constructor(
     @repository(AnimatieRepository)
-    public animatieRepository : AnimatieRepository,
-  ) {}
+    public animatieRepository: AnimatieRepository,
+  ) {
+  }
 
   @post('/animaties', {
     responses: {
@@ -86,7 +87,7 @@ export class AnimatieController {
         },
       },
     })
-    animatie: Animatie,
+      animatie: Animatie,
     @param.query.object('where', getWhereSchemaFor(Animatie)) where?: Where<Animatie>,
   ): Promise<Count> {
     return await this.animatieRepository.updateAll(animatie, where);
@@ -120,7 +121,7 @@ export class AnimatieController {
         },
       },
     })
-    animatie: Animatie,
+      animatie: Animatie,
   ): Promise<void> {
     await this.animatieRepository.updateById(id, animatie);
   }

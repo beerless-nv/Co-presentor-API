@@ -1,11 +1,9 @@
 {
-  "host": "beerless.be",
-  "port": 3306,
-  "url": "",
-  "database": "beerle1q_coPresenter",
-  "password": "sselreeB1998",
   "name": "mysql-beerless",
-  "user": "beerle1q",
   "connector": "mysql",
+  "socketPath": "/cloudsql/co-presenter-247006:europe-west1:co-presenter-db",
+  "database": "coPresenter",
+  "user": "root",
+  "password": "sselreeB1998",
   "connectTimeout": 1000000
 }

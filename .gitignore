@@ -62,3 +62,6 @@ typings/
 
 # Cache used by TypeScript's incremental build
 *.tsbuildinfo
+
+# Hide credentials from github
+./src/datasources/my-sqldb.datasource.json

@@ -54,6 +54,8 @@
     "@loopback/rest": "^1.16.3",
     "@loopback/rest-explorer": "^1.2.5",
     "@loopback/service-proxy": "^1.2.5",
+    "@types/dotenv": "^6.1.1",
+    "dotenv": "^8.0.0",
     "loopback-connector-mysql": "^5.4.1",
     "loopback-socket": "^0.4.2",
     "nodemon": "^1.19.1",

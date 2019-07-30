@@ -13,4 +13,3 @@ export * from './presentatie-personage-personage.controller';
 export * from './personage-animatie.controller';
 export * from './personage-categorie.controller';
 export * from './definitie-categorie.controller';
-export * from './web-socket.controller';
