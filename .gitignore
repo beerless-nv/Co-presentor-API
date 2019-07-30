@@ -65,3 +65,6 @@ typings/
 
 # Hide credentials from github
 src/datasources/my-sqldb.datasource.json
+
+# Hide app.yml information from github
+app.yml
