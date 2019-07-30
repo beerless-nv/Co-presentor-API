@@ -1,9 +1,0 @@
-{
-  "name": "mysql-beerless",
-  "connector": "mysql",
-  "socketPath": "/cloudsql/co-presenter-247006:europe-west1:co-presenter-db",
-  "database": "coPresenter",
-  "user": "root",
-  "password": "sselreeB1998",
-  "connectTimeout": 1000000
-}
