@@ -4,6 +4,7 @@ import {
   Filter,
   repository,
   Where,
+  model,
 } from '@loopback/repository';
 import {
   post,
@@ -16,21 +17,33 @@ import {
   put,
   del,
   requestBody,
+  RestBindings,
+  Request,
+  Response,
 } from '@loopback/rest';
-import {Presentatie} from '../models';
-import {PresentatieRepository} from '../repositories';
+import { inject } from '@loopback/context';
+import * as multer from 'multer';
+import * as path from 'path';
+import { Presentatie, Slide } from '../models';
+import { PresentatieRepository } from '../repositories';
+import * as fs from 'fs';
+import { Http2SecureServer } from 'http2';
+import MulterGoogleCloudStorage from 'multer-google-storage';
+import { SlideController } from './slide.controller';
+
 
 export class PresentatieController {
   constructor(
     @repository(PresentatieRepository)
-    public presentatieRepository : PresentatieRepository,
-  ) {}
+    public presentatieRepository: PresentatieRepository,
+    @inject('controllers.SlideController') public slideController: SlideController,
+  ) { }
 
   @post('/presentaties', {
     responses: {
       '200': {
         description: 'Presentatie model instance',
-        content: {'application/json': {schema: {'x-ts-type': Presentatie}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Presentatie } } },
       },
     },
   })
@@ -42,7 +55,7 @@ export class PresentatieController {
     responses: {
       '200': {
         description: 'Presentatie model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
@@ -58,7 +71,7 @@ export class PresentatieController {
         description: 'Array of Presentatie model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': Presentatie}},
+            schema: { type: 'array', items: { 'x-ts-type': Presentatie } },
           },
         },
       },
@@ -74,7 +87,7 @@ export class PresentatieController {
     responses: {
       '200': {
         description: 'Presentatie PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
@@ -82,7 +95,7 @@ export class PresentatieController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Presentatie, {partial: true}),
+          schema: getModelSchemaRef(Presentatie, { partial: true }),
         },
       },
     })
@@ -96,7 +109,7 @@ export class PresentatieController {
     responses: {
       '200': {
         description: 'Presentatie model instance',
-        content: {'application/json': {schema: {'x-ts-type': Presentatie}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Presentatie } } },
       },
     },
   })
@@ -116,7 +129,7 @@ export class PresentatieController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Presentatie, {partial: true}),
+          schema: getModelSchemaRef(Presentatie, { partial: true }),
         },
       },
     })
@@ -148,5 +161,101 @@ export class PresentatieController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.presentatieRepository.deleteById(id);
+  }
+
+  async convertPPTx(files: any) {
+    var fs = require('fs');
+    var cloudconvert = new (require('cloudconvert'))('OXWbTMAmmF6scVU7qbRKRjXWc6vDrqCCn4bVjRInM3CZudFadqYIMB0dav1Ab47q');
+    var rawData = fs.readFileSync(process.env.GCS_KEYFILE)
+    var keyfile = JSON.parse(rawData);
+    var filename = files[0].originalname;
+    var foldername = filename.replace(".pptx", "");
+    var slideUrl = new Array<String>();
+
+
+
+    cloudconvert.convert({
+      "apikey": "OXWbTMAmmF6scVU7qbRKRjXWc6vDrqCCn4bVjRInM3CZudFadqYIMB0dav1Ab47q",
+      "inputformat": "pptx",
+      "outputformat": "jpg",
+      "input": "base64",
+      "file": files[0].buffer.toString("base64"),
+      "filename": filename,
+      "output": {
+        "googlecloud": {
+          "projectid": process.env.GCLOUD_PROJECT,
+          "bucket": process.env.GCS_BUCKET,
+          "credentials": keyfile,
+          "path": foldername
+        }
+      }
+    }, async (request: any, err: any) => {
+      console.log(err.data.output.files);
+      slideUrl = err.data.output.files;
+
+      // Create new presentation and slide objects
+      var presentatie = new Presentatie();
+      var teller = 1;
+      presentatie.naam = foldername;
+      console.log(slideUrl);
+
+      var presentatieId = (await this.create(presentatie)).ID
+
+      console.log(presentatieId);
+
+      // Create slides for presentatie
+      slideUrl.forEach(url => {
+        var slide = new Slide();
+        slide.afbeelding = url.toString();
+        slide.volgnummer = teller;
+        slide.presentatieID = presentatieId;
+        console.log(this.slideController.create(slide));
+        teller++;
+      });
+    });
+  }
+
+
+  @post('/uploadPresentatie', {
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+            },
+          },
+        },
+        description: '',
+      },
+    },
+  })
+  async uploadPresentatie(
+    @requestBody({
+      description: 'multipart/form-data value.',
+      required: true,
+      content: {
+        'multipart/form-data': {
+          // Skip body parsing
+          'x-parser': 'stream',
+          schema: { type: 'object' },
+        },
+      },
+    })
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<object> {
+    const storage = multer.memoryStorage();
+    const upload = multer({ storage });
+    return new Promise<object>((resolve, reject) => {
+      upload.any()(request, response, err => {
+        if (err) return reject(err);
+        this.convertPPTx(request.files);
+        resolve({
+          files: request.file,
+          fields: (request as any).fields,
+        });
+      });
+    });
   }
 }

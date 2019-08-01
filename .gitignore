@@ -68,3 +68,6 @@ src/datasources/my-sqldb.datasource.json
 
 # Hide app.yml information from github
 app.yml
+
+# DO NOT UPLOAD KEYFILE
+Co-Presenter-358b920db20e.json

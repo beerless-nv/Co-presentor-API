@@ -1,6 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
-@model({settings: {}})
+@model({ settings: {} })
 export class Slide extends Entity {
   @property({
     type: 'number',
@@ -18,6 +18,11 @@ export class Slide extends Entity {
     type: 'string',
   })
   tekst?: string;
+
+  @property({
+    type: 'string',
+  })
+  afbeelding?: string;
 
   @property({
     type: 'number',
