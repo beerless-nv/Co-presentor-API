@@ -57,6 +57,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/multer": "^1.3.7",
     "cloudconvert": "^1.1.2",
+    "crypto": "^1.0.1",
     "dotenv": "^8.0.0",
     "loopback-connector-mysql": "^5.4.1",
     "loopback-socket": "^0.4.2",

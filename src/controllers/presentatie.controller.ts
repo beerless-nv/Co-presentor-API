@@ -29,14 +29,14 @@ import { PresentatieRepository } from '../repositories';
 import * as fs from 'fs';
 import { Http2SecureServer } from 'http2';
 import MulterGoogleCloudStorage from 'multer-google-storage';
-import { SlideController } from './slide.controller';
+import { PresentatieSlideController } from '.';
 
 
 export class PresentatieController {
   constructor(
     @repository(PresentatieRepository)
     public presentatieRepository: PresentatieRepository,
-    @inject('controllers.SlideController') public slideController: SlideController,
+    @inject('controllers.PresentatieSlideController') public presentatieSlideController: PresentatieSlideController,
   ) { }
 
   @post('/presentaties', {
@@ -163,7 +163,9 @@ export class PresentatieController {
     await this.presentatieRepository.deleteById(id);
   }
 
+  // Methoed for converting PPTX to JPG
   async convertPPTx(files: any) {
+    // Declarations for conversion
     var fs = require('fs');
     var cloudconvert = new (require('cloudconvert'))('OXWbTMAmmF6scVU7qbRKRjXWc6vDrqCCn4bVjRInM3CZudFadqYIMB0dav1Ab47q');
     var rawData = fs.readFileSync(process.env.GCS_KEYFILE)
@@ -173,7 +175,7 @@ export class PresentatieController {
     var slideUrl = new Array<String>();
 
 
-
+    // Convert PPTX(base64 string) to JPG
     cloudconvert.convert({
       "apikey": "OXWbTMAmmF6scVU7qbRKRjXWc6vDrqCCn4bVjRInM3CZudFadqYIMB0dav1Ab47q",
       "inputformat": "pptx",
@@ -190,7 +192,8 @@ export class PresentatieController {
         }
       }
     }, async (request: any, err: any) => {
-      console.log(err.data.output.files);
+
+      // Get filenames of slide images
       slideUrl = err.data.output.files;
 
       // Create new presentation and slide objects
@@ -199,9 +202,8 @@ export class PresentatieController {
       presentatie.naam = foldername;
       console.log(slideUrl);
 
+      // Get new ID of created presentation
       var presentatieId = (await this.create(presentatie)).ID
-
-      console.log(presentatieId);
 
       // Create slides for presentatie
       slideUrl.forEach(url => {
@@ -209,13 +211,14 @@ export class PresentatieController {
         slide.afbeelding = url.toString();
         slide.volgnummer = teller;
         slide.presentatieID = presentatieId;
-        console.log(this.slideController.create(slide));
+        this.presentatieSlideController.create(presentatieId, slide);
         teller++;
       });
     });
   }
 
 
+  // Upload new presentation router
   @post('/uploadPresentatie', {
     responses: {
       200: {
@@ -230,6 +233,7 @@ export class PresentatieController {
       },
     },
   })
+  // Method to upload presentation
   async uploadPresentatie(
     @requestBody({
       description: 'multipart/form-data value.',
@@ -245,11 +249,14 @@ export class PresentatieController {
     request: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<object> {
+    // Storing pptx in multer memory
     const storage = multer.memoryStorage();
     const upload = multer({ storage });
     return new Promise<object>((resolve, reject) => {
       upload.any()(request, response, err => {
         if (err) return reject(err);
+
+        // Converting memory stored pptx
         this.convertPPTx(request.files);
         resolve({
           files: request.file,

@@ -17,20 +17,27 @@ import {
   del,
   requestBody,
 } from '@loopback/rest';
-import {Slide} from '../models';
-import {SlideRepository} from '../repositories';
+import { Slide, SlideRelations } from '../models';
+import { inject } from '@loopback/context';
+import { SlideRepository } from '../repositories';
+import * as GoogleCloudStorage from '@google-cloud/storage';
+import { resolve } from 'path';
+import { PresentatieController } from '.';
+import { Application } from '@loopback/core';
+
 
 export class SlideController {
   constructor(
     @repository(SlideRepository)
-    public slideRepository : SlideRepository,
-  ) {}
+    public slideRepository: SlideRepository,
+    @inject('controllers.PresentatieController') public presentatieController: PresentatieController,
+  ) { }
 
   @post('/slides', {
     responses: {
       '200': {
         description: 'Slide model instance',
-        content: {'application/json': {schema: {'x-ts-type': Slide}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Slide } } },
       },
     },
   })
@@ -42,7 +49,7 @@ export class SlideController {
     responses: {
       '200': {
         description: 'Slide model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
@@ -58,7 +65,7 @@ export class SlideController {
         description: 'Array of Slide model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': Slide}},
+            schema: { type: 'array', items: { 'x-ts-type': Slide } },
           },
         },
       },
@@ -74,7 +81,7 @@ export class SlideController {
     responses: {
       '200': {
         description: 'Slide PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
@@ -82,7 +89,7 @@ export class SlideController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Slide, {partial: true}),
+          schema: getModelSchemaRef(Slide, { partial: true }),
         },
       },
     })
@@ -96,12 +103,28 @@ export class SlideController {
     responses: {
       '200': {
         description: 'Slide model instance',
-        content: {'application/json': {schema: {'x-ts-type': Slide}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Slide } } },
       },
     },
   })
-  async findById(@param.path.number('id') id: number): Promise<Slide> {
-    return await this.slideRepository.findById(id);
+  async findById(@param.path.number('id') id: number): Promise<Object> {
+
+    var image = ""
+    var slide = (await this.slideRepository.findById(id));
+
+
+    console.log(slide);
+
+
+    var url = (await this.getSlideImage(slide.afbeelding!, slide.presentatieID!));
+
+    var slideUrl = {
+      slide: slide,
+      url: url
+    }
+
+    return slideUrl;
+
   }
 
   @patch('/slides/{id}', {
@@ -116,7 +139,7 @@ export class SlideController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Slide, {partial: true}),
+          schema: getModelSchemaRef(Slide, { partial: true }),
         },
       },
     })
@@ -148,5 +171,39 @@ export class SlideController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.slideRepository.deleteById(id);
+  }
+
+  async getSlideImage(filename: string, presentatieId: number): Promise<string> {
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    // Get presentation name
+    var presentatie = await this.presentatieController.findById(presentatieId)
+
+
+    // Get File
+    var filepath = '/' + presentatie.naam + '/' + filename;
+    var file = bucket.file(filepath);
+    var datum = new Date()
+    datum.setDate(datum.getDate() + 1);
+
+    // Create config for signed url
+    var config = {
+      action: 'read',
+      expires: datum,
+    }
+
+    // get signed url
+    return (await file.getSignedUrl(config))[0];
   }
 }
