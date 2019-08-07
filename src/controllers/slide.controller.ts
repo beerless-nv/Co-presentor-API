@@ -73,8 +73,23 @@ export class SlideController {
   })
   async find(
     @param.query.object('filter', getFilterSchemaFor(Slide)) filter?: Filter<Slide>,
-  ): Promise<Slide[]> {
-    return await this.slideRepository.find(filter);
+  ): Promise<Array<any>> {
+
+    var slides = (await this.slideRepository.find(filter));
+    var slideUrls = new Array<any>();
+
+    var arrayLength = slides.length;
+
+    for (var i = 0; i < arrayLength; i++) {
+      var url = (await this.getSlideImage(slides[i].afbeelding!, slides[i].presentatieID!));
+      slideUrls.push(
+        {
+          slide: slides[i],
+          url: url
+        });
+    }
+
+    return slideUrls;
   }
 
   @patch('/slides', {
@@ -109,13 +124,7 @@ export class SlideController {
   })
   async findById(@param.path.number('id') id: number): Promise<Object> {
 
-    var image = ""
     var slide = (await this.slideRepository.findById(id));
-
-
-    console.log(slide);
-
-
     var url = (await this.getSlideImage(slide.afbeelding!, slide.presentatieID!));
 
     var slideUrl = {
@@ -192,7 +201,7 @@ export class SlideController {
 
 
     // Get File
-    var filepath = '/' + presentatie.naam + '/' + filename;
+    var filepath = '/' + presentatie.url + '/' + filename;
     var file = bucket.file(filepath);
     var datum = new Date()
     datum.setDate(datum.getDate() + 1);

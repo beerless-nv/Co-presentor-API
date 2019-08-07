@@ -200,6 +200,7 @@ export class PresentatieController {
       var presentatie = new Presentatie();
       var teller = 1;
       presentatie.naam = foldername;
+      presentatie.url = foldername;
       console.log(slideUrl);
 
       // Get new ID of created presentation
