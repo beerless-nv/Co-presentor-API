@@ -30,6 +30,7 @@ import * as fs from 'fs';
 import { Http2SecureServer } from 'http2';
 import MulterGoogleCloudStorage from 'multer-google-storage';
 import { PresentatieSlideController } from '.';
+import * as axios from 'axios';
 
 
 export class PresentatieController {
@@ -149,7 +150,76 @@ export class PresentatieController {
     @param.path.number('id') id: number,
     @requestBody() presentatie: Presentatie,
   ): Promise<void> {
+    // Get old presentation name to update oswald entity
+    var oudePresentatie = (await this.presentatieRepository.findById(id))
+
+    //Update oswald entity
+    //Declarations
+    const chatbotId = '5d2ee9d9dec3e57e85a478ce';
+    const baseUri = 'https://admin-api.oswald.ai/api/v1';
+    const entityLabelId = '5d4965c03a50663b1d6ab381';
+    let data = [];
+    let value = {};
+    let synonyms = [];
+    let credentials = {
+      'email': process.env.OSWALD_USERNAME,
+      'password': process.env.OSWALD_PASSWORD,
+    };
+
+    //get login access token
+    const login = (await axios.default.post(baseUri + '/users/login', credentials))['data'];
+
+
+    //Get old Oswald Entity
+    let oldoptions = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+    //GET request for old entity
+    const entities = (await axios.default.get(baseUri + '/entity-labels/' + entityLabelId + '/values', oldoptions))['data'];
+    var oudeEntity = Object();
+
+
+    entities.forEach((entity: { value: { nl: string; }; }) => {
+      if (entity['value']['nl'] == oudePresentatie.naam) {
+        oudeEntity = entity;
+        //Naam veranderen
+        oudeEntity['value']['nl'] = presentatie.naam;
+      }
+    });
+
+    console.log(oudeEntity);
+
+
+    //add acces token to options
+    let options = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+    const body = oudeEntity;
+
+    //POST request
+    await axios.default.put(baseUri + '/entity-labels/' + entityLabelId + '/values/' + oudeEntity["id"], body, options).catch(err => console.log(err));
+
+    //Move to production
+    //POST request to retrain chatbot
+    const params = {
+      'access_token': login['id']
+    }
+    await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
+
     await this.presentatieRepository.replaceById(id, presentatie);
+
   }
 
   @del('/presentaties/{id}', {
@@ -201,7 +271,7 @@ export class PresentatieController {
       var teller = 1;
       presentatie.naam = foldername;
       presentatie.url = foldername;
-      console.log(slideUrl);
+      this.createPresentatieEntity(foldername);
 
       // Get new ID of created presentation
       var presentatieId = (await this.create(presentatie)).ID
@@ -265,5 +335,53 @@ export class PresentatieController {
         });
       });
     });
+  }
+
+  async createPresentatieEntity(naam: string) {
+
+    //Declarations
+    const chatbotId = '5d2ee9d9dec3e57e85a478ce';
+    const baseUri = 'https://admin-api.oswald.ai/api/v1';
+    const entityLabelId = '5d4965c03a50663b1d6ab381';
+    let data = [];
+    let value = {};
+    let synonyms = [];
+    let credentials = {
+      'email': process.env.OSWALD_USERNAME,
+      'password': process.env.OSWALD_PASSWORD,
+    };
+
+    //get login access token
+    const login = (await axios.default.post(baseUri + '/users/login', credentials))['data'];
+
+    //add acces token to options
+    const options = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+    const body = {
+      "value": { 'nl': naam },
+      "synonyms": [
+        {}
+      ],
+      "useForCorrections": true,
+      "chatbotId": chatbotId,
+      "labelId": entityLabelId
+    }
+
+    //POST request
+    await axios.default.post(baseUri + '/entity-labels/' + entityLabelId + '/values', body, options).catch(err => console.log(err)).then();
+
+    //Move to production
+    //POST request to retrain chatbot
+    const params = {
+      'access_token': login['id']
+    }
+    await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 }
