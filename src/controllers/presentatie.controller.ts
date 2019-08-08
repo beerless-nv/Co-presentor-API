@@ -244,7 +244,7 @@ export class PresentatieController {
     var foldername = filename.replace(".pptx", "");
     var slideUrl = new Array<String>();
 
-
+    //Testlijn
     // Convert PPTX(base64 string) to JPG
     cloudconvert.convert({
       "apikey": "OXWbTMAmmF6scVU7qbRKRjXWc6vDrqCCn4bVjRInM3CZudFadqYIMB0dav1Ab47q",
