@@ -168,6 +168,10 @@ export class DefinitieController {
     },
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
+
+    // Delete oswald entity
+    await this.deleteDefinitieEntity(id);
+
     await this.definitieRepository.deleteById(id);
   }
 
@@ -277,6 +281,70 @@ export class DefinitieController {
 
     //POST request
     await axios.default.put(baseUri + '/entity-labels/' + entityLabelId + '/values/' + oudeEntity["id"], body, options).catch(err => console.log(err));
+
+    //Move to production
+    //POST request to retrain chatbot
+    const params = {
+      'access_token': login['id']
+    }
+    await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
+  }
+
+  async deleteDefinitieEntity(definitieID: number) {
+    // Get old presentation name to update oswald entity
+    var definitie = (await this.definitieRepository.findById(definitieID))
+
+    //Update oswald entity
+    //Declarations
+    const chatbotId = '5d2ee9d9dec3e57e85a478ce';
+    const baseUri = 'https://admin-api.oswald.ai/api/v1';
+    const entityLabelId = '5d2eea80dec3e51809a478d5';
+    let credentials = {
+      'email': process.env.OSWALD_USERNAME,
+      'password': process.env.OSWALD_PASSWORD,
+    };
+
+    //get login access token
+    const login = (await axios.default.post(baseUri + '/users/login', credentials))['data'];
+
+
+    //Get old Oswald Entity
+    let oldoptions = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+    //GET request for old entity
+    const entities = (await axios.default.get(baseUri + '/entity-labels/' + entityLabelId + '/values', oldoptions))['data'];
+    var entityId;
+
+
+    entities.forEach((entity: { [x: string]: any; }) => {
+      if (entity['value']['nl'] == definitie.naam) {
+        entityId = entity["id"];
+      }
+    });
+
+    console.log(entityId);
+
+
+    //add acces token to options
+    let options = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+
+    //POST request
+    await axios.default.delete(baseUri + '/entity-labels/' + entityLabelId + '/values/' + entityId, options).catch(err => console.log(err));
 
     //Move to production
     //POST request to retrain chatbot

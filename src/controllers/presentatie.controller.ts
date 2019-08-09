@@ -30,6 +30,7 @@ import * as fs from 'fs';
 import { Http2SecureServer } from 'http2';
 import MulterGoogleCloudStorage from 'multer-google-storage';
 import { PresentatieSlideController } from '.';
+import * as GoogleCloudStorage from '@google-cloud/storage';
 import * as axios from 'axios';
 
 
@@ -171,6 +172,11 @@ export class PresentatieController {
     },
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
+    //delete slides in google cloud
+    await this.removePresentatieSlides(id);
+
+    //Implement Oswald delete entity
+
     await this.presentatieRepository.deleteById(id);
   }
 
@@ -340,6 +346,70 @@ export class PresentatieController {
     await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 
+  async deletePresentatieEntity(presentatieID: number) {
+    // Get old presentation name to update oswald entity
+    var presentatie = (await this.presentatieRepository.findById(presentatieID))
+
+    //Update oswald entity
+    //Declarations
+    const chatbotId = '5d2ee9d9dec3e57e85a478ce';
+    const baseUri = 'https://admin-api.oswald.ai/api/v1';
+    const entityLabelId = '5d4965c03a50663b1d6ab381';
+    let credentials = {
+      'email': process.env.OSWALD_USERNAME,
+      'password': process.env.OSWALD_PASSWORD,
+    };
+
+    //get login access token
+    const login = (await axios.default.post(baseUri + '/users/login', credentials))['data'];
+
+
+    //Get old Oswald Entity
+    let oldoptions = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+    //GET request for old entity
+    const entities = (await axios.default.get(baseUri + '/entity-labels/' + entityLabelId + '/values', oldoptions))['data'];
+    var entityId;
+
+
+    entities.forEach((entity: { [x: string]: any; }) => {
+      if (entity['value']['nl'] == presentatie.naam) {
+        entityId = entity["id"];
+      }
+    });
+
+    console.log(entityId);
+
+
+    //add acces token to options
+    let options = {
+      'headers': {
+        'Content-Type': 'application/json',
+      },
+      'params': {
+        'access_token': login['id'],
+      },
+    };
+
+
+    //POST request
+    await axios.default.delete(baseUri + '/entity-labels/' + entityLabelId + '/values/' + entityId, options).catch(err => console.log(err));
+
+    //Move to production
+    //POST request to retrain chatbot
+    const params = {
+      'access_token': login['id']
+    }
+    await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
+  }
+
   // Methoed for converting PPTX to JPG
   async convertPPTx(files: any, presentatienaam: string, presentatieID: number) {
     // Declarations for conversion
@@ -351,9 +421,9 @@ export class PresentatieController {
     var slideUrl = new Array<String>();
     var teller = 1;
 
+    //remove old slides
+    await this.removePresentatieSlides(presentatieID);
 
-
-    //Testlijn
     // Convert PPTX(base64 string) to JPG
     cloudconvert.convert({
       "apikey": process.env.CLOUDCONVERT,
@@ -398,6 +468,33 @@ export class PresentatieController {
 
       return result.data.output;
     });
+  }
+
+  async removePresentatieSlides(presentatieId: number) {
+
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    // Get presentation name
+    var presentatie = await this.presentatieRepository.findById(presentatieId)
+
+    if (await bucket.getFiles({
+      prefix: presentatie.url + '/'
+    })) {
+      await bucket.deleteFiles({
+        prefix: presentatie.url + '/'
+      });
+    }
   }
 
 }
