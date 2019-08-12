@@ -59,11 +59,7 @@ export class PresentatieController {
       return await this.presentatieRepository.create(presentatie);
     }
     else {
-      throw {
-        code: 400,
-        message: "Deze presentatie bestaat al",
-        name: "DoubleEntityError"
-      }
+      throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
     }
   }
 

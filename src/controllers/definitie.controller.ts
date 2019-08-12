@@ -45,7 +45,7 @@ export class DefinitieController {
       return await this.definitieRepository.create(definitie);
     }
     else {
-      throw new HttpErrors[422]('Definitienaam bestaat al!');
+      throw new HttpErrors[422]('Een definitie met deze naam bestaat al!');
     }
   }
 
