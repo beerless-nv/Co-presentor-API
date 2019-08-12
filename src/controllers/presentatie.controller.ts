@@ -20,6 +20,7 @@ import {
   RestBindings,
   Request,
   Response,
+  HttpErrors,
 } from '@loopback/rest';
 import { inject } from '@loopback/context';
 import * as multer from 'multer';
@@ -50,11 +51,20 @@ export class PresentatieController {
     },
   })
   async create(@requestBody() presentatie: Presentatie): Promise<Presentatie> {
+    if ((await this.find({ where: { naam: presentatie.naam } })).length == 0) {
+      //Create oswald entity
+      await this.createPresentatieEntity(presentatie.naam);
 
-    // Create new oswald entity
-    this.createPresentatieEntity(presentatie.naam);
-
-    return await this.presentatieRepository.create(presentatie);
+      //Insert definition into DB
+      return await this.presentatieRepository.create(presentatie);
+    }
+    else {
+      throw {
+        code: 400,
+        message: "Deze presentatie bestaat al",
+        name: "DoubleEntityError"
+      }
+    }
   }
 
   @get('/presentaties/count', {
@@ -141,7 +151,21 @@ export class PresentatieController {
     })
     presentatie: Presentatie,
   ): Promise<void> {
-    await this.presentatieRepository.updateById(id, presentatie);
+
+    var databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }))
+
+    if (presentatie.naam != undefined && (await this.find({ where: { naam: presentatie.naam } })).length != 0) {
+      throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
+    }
+    else {
+      //Create oswald entity
+      if (presentatie.naam != undefined) {
+        await this.updatePresentatieEntity(id, presentatie);
+      }
+
+      //Insert definition into DB
+      return await this.presentatieRepository.updateById(id, presentatie);
+    }
   }
 
   @put('/presentaties/{id}', {
@@ -155,13 +179,7 @@ export class PresentatieController {
     @param.path.number('id') id: number,
     @requestBody() presentatie: Presentatie,
   ): Promise<void> {
-
-    //Update entity
-    await this.updatePresentatieEntity(id, presentatie);
-
-    // Update database
-    await this.presentatieRepository.replaceById(id, presentatie);
-
+    return await this.presentatieRepository.replaceById(id, presentatie);
   }
 
   @del('/presentaties/{id}', {

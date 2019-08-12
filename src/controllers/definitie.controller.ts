@@ -16,11 +16,11 @@ import {
   put,
   del,
   requestBody,
+  HttpErrors,
 } from '@loopback/rest';
 import { Definitie } from '../models';
 import { DefinitieRepository } from '../repositories';
 import * as axios from 'axios';
-import { filter } from 'minimatch';
 
 export class DefinitieController {
   constructor(
@@ -37,8 +37,7 @@ export class DefinitieController {
     },
   })
   async create(@requestBody() definitie: Definitie): Promise<Definitie> {
-
-    if (!(await this.find({ where: { naam: definitie.naam } }))) {
+    if ((await this.find({ where: { naam: definitie.naam } })).length == 0) {
       //Create oswald entity
       await this.createDefinitieEntity(definitie.naam);
 
@@ -46,11 +45,7 @@ export class DefinitieController {
       return await this.definitieRepository.create(definitie);
     }
     else {
-      throw {
-        code: 400,
-        message: "Deze definitie bestaat al",
-        name: "DoubleEntityError"
-      }
+      throw new HttpErrors[422]('Definitienaam bestaat al!');
     }
   }
 
@@ -138,7 +133,20 @@ export class DefinitieController {
     })
     definitie: Definitie,
   ): Promise<void> {
-    await this.definitieRepository.updateById(id, definitie);
+
+    // Check if new name is already in database
+    if (definitie.naam != undefined && (await this.find({ where: { naam: definitie.naam } })).length != 0) {
+      throw new HttpErrors[422]('Definitienaam bestaat al!');
+    }
+    else {
+      // Update oswald entity
+      if (definitie.naam != undefined) {
+        await this.updateDefinitieEntity(id, definitie);
+      }
+
+      // Update database
+      await this.definitieRepository.updateById(id, definitie);
+    }
   }
 
   @put('/definities/{id}', {
@@ -153,11 +161,10 @@ export class DefinitieController {
     @requestBody() definitie: Definitie,
   ): Promise<void> {
 
-    // Update oswald entity
-    await this.updateDefinitieEntity(id, definitie);
 
     // Update database
     await this.definitieRepository.replaceById(id, definitie);
+
   }
 
   @del('/definities/{id}', {

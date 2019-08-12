@@ -1,7 +1,7 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
-import {Categorie} from './categorie.model';
+import { Entity, model, property, belongsTo } from '@loopback/repository';
+import { Categorie } from './categorie.model';
 
-@model({settings: {}})
+@model({ settings: {} })
 export class Definitie extends Entity {
   @property({
     type: 'number',
@@ -12,6 +12,9 @@ export class Definitie extends Entity {
   @property({
     type: 'string',
     required: true,
+    index: {
+      unique: true
+    }
   })
   naam: string;
 
