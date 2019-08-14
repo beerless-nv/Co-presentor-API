@@ -134,13 +134,15 @@ export class DefinitieController {
     definitie: Definitie,
   ): Promise<void> {
 
+    var databankDefinitie = (await this.find({ where: { naam: definitie.naam } }));
+
     // Check if new name is already in database
-    if (definitie.naam != undefined && (await this.find({ where: { naam: definitie.naam } })).length != 0) {
+    if (definitie.naam != null && definitie.naam != undefined && databankDefinitie.length != 0 && databankDefinitie[0].ID != id) {
       throw new HttpErrors[422]('Definitienaam bestaat al!');
     }
     else {
       // Update oswald entity
-      if (definitie.naam != undefined) {
+      if (definitie.naam != undefined && definitie.naam != null) {
         await this.updateDefinitieEntity(id, definitie);
       }
 

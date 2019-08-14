@@ -55,6 +55,9 @@ export class PresentatieController {
       //Create oswald entity
       await this.createPresentatieEntity(presentatie.naam);
 
+      //Set presentation URL
+      presentatie.url = presentatie.naam;
+
       //Insert definition into DB
       return await this.presentatieRepository.create(presentatie);
     }
@@ -148,16 +151,22 @@ export class PresentatieController {
     presentatie: Presentatie,
   ): Promise<void> {
 
-    var databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }))
+    var databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }));
 
-    if (presentatie.naam != undefined && (await this.find({ where: { naam: presentatie.naam } })).length != 0) {
+    if (presentatie.naam != null && presentatie.naam != undefined && databankPresentatie.length != 0 && databankPresentatie[0].ID != id) {
       throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
     }
     else {
       //Create oswald entity
-      if (presentatie.naam != undefined) {
+      if (presentatie.naam != undefined && presentatie.naam != null) {
         await this.updatePresentatieEntity(id, presentatie);
+
+        //Set new presentation URL
+        presentatie.url = presentatie.naam;
+
       }
+
+
 
       //Insert definition into DB
       return await this.presentatieRepository.updateById(id, presentatie);
@@ -190,7 +199,9 @@ export class PresentatieController {
     await this.removePresentatieSlides(id);
 
     //Implement Oswald delete entity
+    await this.deletePresentatieEntity(id);
 
+    //Delete from DB
     await this.presentatieRepository.deleteById(id);
   }
 
