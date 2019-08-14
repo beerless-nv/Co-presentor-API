@@ -163,10 +163,7 @@ export class PresentatieController {
 
         //Set new presentation URL
         presentatie.url = presentatie.naam;
-
       }
-
-
 
       //Insert definition into DB
       return await this.presentatieRepository.updateById(id, presentatie);
@@ -242,11 +239,15 @@ export class PresentatieController {
     const storage = multer.memoryStorage();
     const upload = multer({ storage });
     return new Promise<object>((resolve, reject) => {
-      upload.any()(request, response, err => {
+      upload.any()(request, response, async err => {
         if (err) return reject(err);
 
         // Converting memory stored pptx
-        var result = this.convertPPTx(request.files, naam, id);
+        var result = await this.convertPPTx(request.files, naam, id);
+
+        //Remove existing slides
+        await this.presentatieSlideController.delete(id);
+
         resolve({
           files: request.file,
           fields: (request as any).fields,
@@ -520,6 +521,8 @@ export class PresentatieController {
         prefix: presentatie.url + '/'
       });
     }
+
+    await this.presentatieSlideController.delete(presentatieId);
   }
 
 }
