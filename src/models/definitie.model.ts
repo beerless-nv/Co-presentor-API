@@ -1,5 +1,4 @@
 import { Entity, model, property, belongsTo } from '@loopback/repository';
-import { Categorie } from './categorie.model';
 
 @model({ settings: {} })
 export class Definitie extends Entity {
@@ -22,9 +21,6 @@ export class Definitie extends Entity {
     type: 'string',
   })
   tekst?: string;
-
-  @belongsTo(() => Categorie)
-  categorieID: number;
 
   constructor(data?: Partial<Definitie>) {
     super(data);
