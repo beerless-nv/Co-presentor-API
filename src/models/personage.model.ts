@@ -1,8 +1,7 @@
-import {Entity, model, property, hasMany, belongsTo} from '@loopback/repository';
-import {Animatie} from './animatie.model';
-import {Categorie} from './categorie.model';
+import { Entity, model, property, hasMany, belongsTo } from '@loopback/repository';
+import { Animatie } from './animatie.model';
 
-@model({settings: {}})
+@model({ settings: {} })
 export class Personage extends Entity {
   @property({
     type: 'number',
@@ -16,11 +15,8 @@ export class Personage extends Entity {
   })
   naam: string;
 
-  @hasMany(() => Animatie, {keyTo: 'personageID'})
+  @hasMany(() => Animatie, { keyTo: 'personageID' })
   animaties: Animatie[];
-
-  @belongsTo(() => Categorie)
-  categorieID: number;
 
   constructor(data?: Partial<Personage>) {
     super(data);
