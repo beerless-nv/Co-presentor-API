@@ -1,4 +1,5 @@
 export * from './animatie.model';
+export * from './categorie.model';
 export * from './chatbot-credentials.model';
 export * from './definitie.model';
 export * from './personage.model';

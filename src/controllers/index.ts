@@ -1,5 +1,6 @@
 export * from './ping.controller';
 export * from './animatie.controller';
+export * from './categorie.controller';
 export * from './chatbot-credentials.controller';
 export * from './definitie.controller';
 export * from './personage.controller';
@@ -10,3 +11,5 @@ export * from './presentatie-slide.controller';
 export * from './presentatie-personage-presentatie.controller';
 export * from './presentatie-personage-personage.controller';
 export * from './personage-animatie.controller';
+export * from './personage-categorie.controller';
+export * from './definitie-categorie.controller';

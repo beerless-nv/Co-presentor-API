@@ -242,11 +242,11 @@ export class PresentatieController {
     const storage = multer.memoryStorage();
     const upload = multer({ storage });
     return new Promise<object>((resolve, reject) => {
-      upload.any()(request, response, async err => {
+      upload.any()(request, response, err => {
         if (err) return reject(err);
 
         // Converting memory stored pptx
-        var result = await this.convertPPTx(request.files, naam, id);
+        var result = this.convertPPTx(request.files, naam, id);
         resolve({
           files: request.file,
           fields: (request as any).fields,
