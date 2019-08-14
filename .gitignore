@@ -71,3 +71,6 @@ app.yml
 
 # DO NOT UPLOAD KEYFILE
 Co-Presenter-358b920db20e.json
+
+# Environment variables
+.env
