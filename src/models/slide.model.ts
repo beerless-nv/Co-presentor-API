@@ -29,6 +29,11 @@ export class Slide extends Entity {
   })
   presentatieID?: number;
 
+  @property({
+    type: 'string',
+  })
+  video?: string;
+
   constructor(data?: Partial<Slide>) {
     super(data);
   }

@@ -1,7 +1,8 @@
-import {Entity, model, property, hasMany} from '@loopback/repository';
-import {Slide} from './slide.model';
+import { Entity, model, property, hasMany } from '@loopback/repository';
+import { Slide } from './slide.model';
+import { Synoniem } from './synoniem.model';
 
-@model({settings: {}})
+@model({ settings: {} })
 export class Presentatie extends Entity {
   @property({
     type: 'number',
@@ -25,8 +26,11 @@ export class Presentatie extends Entity {
   })
   beschrijving?: string;
 
-  @hasMany(() => Slide ,{keyTo: 'presentatieID'})
+  @hasMany(() => Slide, { keyTo: 'presentatieID' })
   slides: Slide[];
+
+  @hasMany(() => Synoniem)
+  synoniems: Synoniem[];
 
   constructor(data?: Partial<Presentatie>) {
     super(data);

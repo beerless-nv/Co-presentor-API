@@ -5,3 +5,4 @@ export * from './personage.model';
 export * from './presentatie.model';
 export * from './presentatie-personage.model';
 export * from './slide.model';
+export * from './synoniem.model';

@@ -10,3 +10,6 @@ export * from './presentatie-slide.controller';
 export * from './presentatie-personage-presentatie.controller';
 export * from './presentatie-personage-personage.controller';
 export * from './personage-animatie.controller';
+export * from './presentatie-synoniem.controller';
+export * from './definitie-synoniem.controller';
+export * from './synoniem.controller';

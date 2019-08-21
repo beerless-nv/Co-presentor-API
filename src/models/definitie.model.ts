@@ -1,4 +1,5 @@
-import { Entity, model, property, belongsTo } from '@loopback/repository';
+import { Entity, model, property, belongsTo, hasMany} from '@loopback/repository';
+import {Synoniem} from './synoniem.model';
 
 @model({ settings: {} })
 export class Definitie extends Entity {
@@ -21,6 +22,9 @@ export class Definitie extends Entity {
     type: 'string',
   })
   tekst?: string;
+
+  @hasMany(() => Synoniem)
+  synoniems: Synoniem[];
 
   constructor(data?: Partial<Definitie>) {
     super(data);

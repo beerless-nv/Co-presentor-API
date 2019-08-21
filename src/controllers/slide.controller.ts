@@ -15,7 +15,10 @@ import {
   patch,
   put,
   del,
+  RestBindings,
   requestBody,
+  Request,
+  Response,
 } from '@loopback/rest';
 import { Slide, SlideRelations } from '../models';
 import { inject } from '@loopback/context';
@@ -24,6 +27,7 @@ import * as GoogleCloudStorage from '@google-cloud/storage';
 import { resolve } from 'path';
 import { PresentatieController } from '.';
 import { Application } from '@loopback/core';
+import * as multer from 'multer';
 
 
 export class SlideController {
@@ -215,4 +219,75 @@ export class SlideController {
     // get signed url
     return (await file.getSignedUrl(config))[0];
   }
+
+  // // Upload slide video router
+  // @post('/uploadVideo/{id}/{naam}', {
+  //   responses: {
+  //     200: {
+  //       content: {
+  //         'application/json': {
+  //           schema: {
+  //             type: 'object',
+  //           },
+  //         },
+  //       },
+  //       description: '',
+  //     },
+  //   },
+  // })
+  // // Function to upload Video
+  // async uploadVideo(
+  //   @requestBody({
+  //     description: 'multipart/form-data value.',
+  //     required: true,
+  //     content: {
+  //       'multipart/form-data': {
+  //         // Skip body parsing
+  //         'x-parser': 'stream',
+  //         schema: { type: 'object' },
+  //       }
+  //     },
+  //   })
+  //   request: Request,
+  //   @inject(RestBindings.Http.RESPONSE) response: Response,
+  //   @param.path.number('id') id: number,
+  //   @param.path.string('naam') naam: string
+  // ): Promise<object> {
+  //   return {};
+  // }
+
+  // async sendUploadToGCS(req: any, res: any, next: any) {
+  //   if (!req.file) {
+  //     return next();
+  //   }
+
+  //   const gcsname = Date.now() + req.file.originalname;
+  //   const file = bucket.file(gcsname);
+
+  //   const stream = file.createWriteStream({
+  //     metadata: {
+  //       contentType: req.file.mimetype
+  //     },
+  //     resumable: false
+  //   });
+
+  //   stream.on('error', (err) => {
+  //     req.file.cloudStorageError = err;
+  //     next(err);
+  //   });
+
+  //   stream.on('finish', () => {
+  //     req.file.cloudStorageObject = gcsname;
+  //     file.makePublic().then(() => {
+  //       req.file.cloudStoragePublicUrl = getPublicUrl(gcsname);
+  //       next();
+  //     });
+  //   });
+
+  //   stream.end(req.file.buffer);
+  // }
+
+  // async getPublicUrl(filename: any) {
+  //   return `https://storage.googleapis.com/${CLOUD_BUCKET}/${filename}`;
+  // }
 }
