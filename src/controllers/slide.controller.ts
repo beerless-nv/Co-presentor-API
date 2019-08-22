@@ -88,11 +88,23 @@ export class SlideController {
 
     for (var i = 0; i < arrayLength; i++) {
       var url = (await this.getSlideImage(slides[i].afbeelding!, slides[i].presentatieID!));
-      slideUrls.push(
-        {
-          slide: slides[i],
-          url: url
-        });
+      if (slides[i].video) {
+        let video = (await this.getSlideVideo(slides[i]));
+        slideUrls.push(
+          {
+            slide: slides[i],
+            url: url,
+            video: video
+          });
+      }
+      else {
+        slideUrls.push(
+          {
+            slide: slides[i],
+            url: url,
+            video: null
+          });
+      }
     }
 
     return slideUrls;
@@ -130,14 +142,28 @@ export class SlideController {
   })
   async findById(@param.path.number('id') id: number): Promise<Object> {
 
-    var slide = (await this.slideRepository.findById(id));
-    var url = (await this.getSlideImage(slide.afbeelding!, slide.presentatieID!));
-
-    var slideUrl = {
-      slide: slide,
-      url: url
+    let slide = (await this.slideRepository.findById(id));
+    let url = (await this.getSlideImage(slide.afbeelding!, slide.presentatieID!));
+    let video: any;
+    let slideUrl: object;
+    console.log("TEST");
+    if (slide.video) {
+      video = (await this.getSlideVideo(slide));
+      slideUrl = {
+        slide: slide,
+        url: url,
+        video: video
+      }
+    }
+    else {
+      slideUrl = {
+        slide: slide,
+        url: url,
+        video: null
+      }
     }
 
+    console.log(slideUrl);
     return slideUrl;
 
   }
@@ -222,8 +248,38 @@ export class SlideController {
     return (await file.getSignedUrl(config))[0];
   }
 
+  async getSlideVideo(slide: Slide): Promise<string> {
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    // Get File
+    var filepath = 'video/' + slide.video;
+    var file = bucket.file(filepath);
+    var datum = new Date()
+    datum.setDate(datum.getDate() + 1);
+
+    // Create config for signed url
+    var config = {
+      action: 'read',
+      expires: datum,
+    }
+
+    // get signed url
+    return (await file.getSignedUrl(config))[0];
+  }
+
   // Upload slide video router
-  @post('/uploadVideo/{id}/{naam}', {
+  @post('/uploadVideo/{id}', {
     responses: {
       200: {
         content: {
@@ -253,8 +309,9 @@ export class SlideController {
     req: Request,
     @inject(RestBindings.Http.RESPONSE) response: Response,
     @param.path.number('id') id: number,
-    @param.path.string('naam') naam: string,
   ): Promise<any> {
+
+    console.log('START');
 
     // Storage declarations
     const storage = new GoogleCloudStorage({
@@ -263,9 +320,15 @@ export class SlideController {
     });
     const upload = multer({
       storage: multer.memoryStorage()
-    })
-    const bucket = storage.bucket(process.env.GCS_BUCKET!);
-    storage.acl
+    });
+    const bucket = await storage.bucket(process.env.GCS_BUCKET!);
+
+    console.log("BEFORE DELETE");
+
+    // Delete previous video
+    await this.removeSlideVideo(id);
+
+    console.log("AFTER DELETE");
 
     // Initiating upload
     upload.single('file')(req, response, async err => {
@@ -282,14 +345,15 @@ export class SlideController {
         throw err;
       });
 
+      console.log("UPLOAD TO GCS");
       // Stream succes
-      let result = blobStream.on('finish', async () => {
+      let result = await blobStream.on('finish', async () => {
         const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
 
         //Get Slide object
         let slideObject: any = (await this.findById(id));
         let slide = slideObject['slide'];
-        slide.video = publicUrl;
+        slide.video = req.file.originalname;
         this.updateById(id, slide)
 
         return slide;
@@ -300,5 +364,50 @@ export class SlideController {
 
       return result;
     });
+  }
+
+  @del('/deleteVideo/{id}', {
+    responses: {
+      '204': {
+        description: 'Slide DELETE success',
+      },
+    },
+  })
+  async removeSlideVideo(@param.path.number('id') id: number): Promise<any> {
+    console.log("IN DELETE START");
+    // Get slide object
+    console.log("TEST");
+    let slideObject: any = await this.findById(id);
+    let slide: Slide = slideObject['slide'];
+
+    if (slide.video) {
+      console.log('IN IF REMOVE')
+      // Declaration Google Cloud Storage
+      const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+      const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+      const BUCKETNAME = process.env.GCS_BUCKET;
+
+      const storage = new GoogleCloudStorage({
+        projectId: GOOGLE_CLOUD_PROJECT_ID,
+        keyFilename: GOOGLE_CLOUD_KEYFILE,
+      });
+
+      // Get bucket
+      const bucket = storage.bucket(BUCKETNAME!);
+
+      // Delete file
+      let result = await bucket.file("video/" + slide.video).delete();
+
+      // Update database
+      slide.video = undefined;
+      await this.updateById(id, slide);
+
+      // Return result
+      return result
+    }
+    else {
+      console.log('IN ELSE REMOVE');
+      return;
+    }
   }
 }

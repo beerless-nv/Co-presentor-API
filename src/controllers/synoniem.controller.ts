@@ -196,9 +196,30 @@ export class SynoniemController {
       });
 
       // Update Oswald entity
-      await this.updateEntities(data.synoniemen, data.presentatieId, data.definitieId);
+      return await this.updateEntities(data.synoniemen, data.presentatieId, data.definitieId);
     }
-    return "Updated all entities";
+    else {
+      // Delete all existing synoniemen
+      let oudeSynoniemen = await this.find({
+        where: {
+          definitieId: data.definitieId
+        }
+      });
+
+      if (oudeSynoniemen) {
+        oudeSynoniemen.forEach(synoniem => {
+          this.deleteById(synoniem.ID!);
+        });
+      }
+
+      // Create all new synonyms
+      data.synoniemen.forEach((synoniem: Pick<Synoniem, "ID" | "naam" | "presentatieId" | "definitieId" | "getId" | "getIdObject" | "toJSON" | "toObject">) => {
+        this.create(synoniem);
+      });
+
+      // Update Oswald entity
+      return await this.updateEntities(data.synoniemen, data.presentatieId, data.definitieId);
+    }
   }
 
   async updateEntities(synoniemen: Array<Synoniem>, presentatieId: number, definitieId: number): Promise<void> {
