@@ -19,6 +19,7 @@ import {
   requestBody,
   Request,
   Response,
+  HttpErrors,
 } from '@loopback/rest';
 import { Slide, SlideRelations } from '../models';
 import { inject } from '@loopback/context';
@@ -28,6 +29,7 @@ import { resolve } from 'path';
 import { PresentatieController } from '.';
 import { Application } from '@loopback/core';
 import * as multer from 'multer';
+import { runInNewContext } from 'vm';
 
 
 export class SlideController {
@@ -220,74 +222,83 @@ export class SlideController {
     return (await file.getSignedUrl(config))[0];
   }
 
-  // // Upload slide video router
-  // @post('/uploadVideo/{id}/{naam}', {
-  //   responses: {
-  //     200: {
-  //       content: {
-  //         'application/json': {
-  //           schema: {
-  //             type: 'object',
-  //           },
-  //         },
-  //       },
-  //       description: '',
-  //     },
-  //   },
-  // })
-  // // Function to upload Video
-  // async uploadVideo(
-  //   @requestBody({
-  //     description: 'multipart/form-data value.',
-  //     required: true,
-  //     content: {
-  //       'multipart/form-data': {
-  //         // Skip body parsing
-  //         'x-parser': 'stream',
-  //         schema: { type: 'object' },
-  //       }
-  //     },
-  //   })
-  //   request: Request,
-  //   @inject(RestBindings.Http.RESPONSE) response: Response,
-  //   @param.path.number('id') id: number,
-  //   @param.path.string('naam') naam: string
-  // ): Promise<object> {
-  //   return {};
-  // }
+  // Upload slide video router
+  @post('/uploadVideo/{id}/{naam}', {
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+            },
+          },
+        },
+        description: '',
+      },
+    },
+  })
+  // Function to upload Video
+  async uploadVideo(
+    @requestBody({
+      description: 'multipart/form-data value.',
+      required: true,
+      content: {
+        'multipart/form-data': {
+          // Skip body parsing
+          'x-parser': 'stream',
+          schema: { type: 'object' },
+        }
+      },
+    })
+    req: Request,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+    @param.path.number('id') id: number,
+    @param.path.string('naam') naam: string,
+  ): Promise<any> {
 
-  // async sendUploadToGCS(req: any, res: any, next: any) {
-  //   if (!req.file) {
-  //     return next();
-  //   }
+    // Storage declarations
+    const storage = new GoogleCloudStorage({
+      projectId: process.env.GCLOUD_PROJECT,
+      keyFilename: process.env.GCS_KEYFILE,
+    });
+    const upload = multer({
+      storage: multer.memoryStorage()
+    })
+    const bucket = storage.bucket(process.env.GCS_BUCKET!);
+    storage.acl
 
-  //   const gcsname = Date.now() + req.file.originalname;
-  //   const file = bucket.file(gcsname);
+    // Initiating upload
+    upload.single('file')(req, response, async err => {
+      if (!req.file) {
+        throw new HttpErrors[400]('Geen bestand geüpload!');
+      }
 
-  //   const stream = file.createWriteStream({
-  //     metadata: {
-  //       contentType: req.file.mimetype
-  //     },
-  //     resumable: false
-  //   });
+      // Blob declaration
+      const blob = bucket.file("video/" + req.file.originalname)
+      const blobStream = blob.createWriteStream();
 
-  //   stream.on('error', (err) => {
-  //     req.file.cloudStorageError = err;
-  //     next(err);
-  //   });
+      // Stream error
+      blobStream.on('error', err => {
+        throw err;
+      });
 
-  //   stream.on('finish', () => {
-  //     req.file.cloudStorageObject = gcsname;
-  //     file.makePublic().then(() => {
-  //       req.file.cloudStoragePublicUrl = getPublicUrl(gcsname);
-  //       next();
-  //     });
-  //   });
+      // Stream succes
+      let result = blobStream.on('finish', async () => {
+        const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
 
-  //   stream.end(req.file.buffer);
-  // }
+        //Get Slide object
+        let slideObject: any = (await this.findById(id));
+        let slide = slideObject['slide'];
+        slide.video = publicUrl;
+        this.updateById(id, slide)
 
-  // async getPublicUrl(filename: any) {
-  //   return `https://storage.googleapis.com/${CLOUD_BUCKET}/${filename}`;
-  // }
+        return slide;
+      });
+
+      // Closing stream
+      blobStream.end(req.file.buffer);
+
+      return result;
+    });
+  }
 }
