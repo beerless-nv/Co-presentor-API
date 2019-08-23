@@ -30,7 +30,7 @@ import { PresentatieController } from '.';
 import { Application } from '@loopback/core';
 import * as multer from 'multer';
 import { runInNewContext } from 'vm';
-
+import { Server, request } from 'https';
 
 export class SlideController {
   constructor(
@@ -325,47 +325,63 @@ export class SlideController {
 
     console.log("voor upload");
     // Initiating upload
-    let result = await upload.single('file')(req, response, err => {
-      if (!req.file) {
-        throw new HttpErrors[400]('Geen bestand geüpload!');
-      }
+    return new Promise<object>((resolve, reject) => {
+      upload.single('file')(req, response, async err => {
+
+        if (err) {
+          // A Multer error occurred when uploading.
+          return reject(err);
+        }
+        console.log('begin upload');
+        console.log(req.file);
+        if (!req.file) {
+          throw new HttpErrors[400]('Geen bestand geüpload!');
+        }
 
 
-      console.log("Begin upload");
+        console.log("Begin upload");
 
-      // Blob declaration
-      const blob = bucket.file("video/" + req.file.originalname)
-      const blobStream = blob.createWriteStream();
+        // Blob declaration
+        const blob = bucket.file("video/" + req.file.originalname)
+        const blobStream = blob.createWriteStream({
+          resumable: false,
+        });
 
-      console.log("voor on error");
-      // Stream error
-      blobStream.on('error', err => {
-        throw err;
+        console.log("voor on error");
+        // Stream error
+        await blobStream.on('error', err => {
+          throw err;
+        });
+
+        console.log("voor on finish");
+        // Stream succes
+        await blobStream.on('finish', async () => {
+          const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
+        });
+
+
+        console.log("voor findbyID");
+        //Get Slide object
+        this.findById(id).then((slideObject: any) => {
+          let slide = slideObject['slide'];
+          slide.video = req.file.originalname;
+          this.updateById(id, slide);
+          console.log(slide);
+        });
+
+
+        console.log("voor blobstream end");
+        // Closing stream
+        await blobStream.end(req.file.buffer);
+
+        resolve({
+          files: req.file,
+          fields: (req as any).fields,
+        });
+
+        return "test";
       });
-
-      console.log("voor on finish");
-      // Stream succes
-      blobStream.on('finish', async () => {
-        const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
-      });
-
-
-      console.log("voor findbyID");
-      //Get Slide object
-      this.findById(id).then((slideObject: any) => {
-        let slide = slideObject['slide'];
-        slide.video = req.file.originalname;
-        this.updateById(id, slide);
-        console.log(slide);
-      });
-
-
-      console.log("voor blobstream end");
-      // Closing stream
-      blobStream.end(req.file.buffer);
-      return;
     });
-    return;
   }
 
   @del('/deleteVideo/{id}', {
@@ -376,6 +392,7 @@ export class SlideController {
     },
   })
   async removeSlideVideo(@param.path.number('id') id: number): Promise<any> {
+    console.log("STart REMOVE");
     // Get slide object
     let slideObject: any = await this.findById(id);
     let slide: Slide = slideObject['slide'];
@@ -406,10 +423,12 @@ export class SlideController {
       slide.video = undefined;
       let result = await this.updateById(id, slide);
 
+      console.log("Voor return result")
       // Return result
       return result
     }
     else {
+      console.log("Return in else")
       return;
     }
   }
