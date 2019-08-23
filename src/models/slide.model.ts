@@ -31,6 +31,8 @@ export class Slide extends Entity {
 
   @property({
     type: 'string',
+    required: false,
+    jsonSchema: { nullable: true },
   })
   video?: string;
 
