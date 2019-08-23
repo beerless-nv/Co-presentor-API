@@ -33,6 +33,7 @@ import MulterGoogleCloudStorage from 'multer-google-storage';
 import { PresentatieSlideController } from '.';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import * as axios from 'axios';
+import { authenticate } from '@loopback/authentication';
 
 
 export class PresentatieController {
@@ -50,6 +51,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async create(@requestBody() presentatie: Presentatie): Promise<Presentatie> {
     if ((await this.find({ where: { naam: presentatie.naam } })).length == 0) {
       //Create oswald entity
@@ -74,6 +76,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Presentatie)) where?: Where<Presentatie>,
   ): Promise<Count> {
@@ -92,6 +95,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(Presentatie)) filter?: Filter<Presentatie>,
   ): Promise<Presentatie[]> {
@@ -106,6 +110,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
@@ -139,6 +144,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -177,6 +183,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() presentatie: Presentatie,
@@ -191,6 +198,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     //delete slides in google cloud
     await this.removePresentatieSlides(id);
@@ -217,6 +225,7 @@ export class PresentatieController {
       },
     },
   })
+  // @authenticate('jwt')
   // Method to upload presentation
   async uploadPresentatie(
     @requestBody({

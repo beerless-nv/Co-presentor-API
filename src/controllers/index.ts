@@ -13,3 +13,4 @@ export * from './personage-animatie.controller';
 export * from './presentatie-synoniem.controller';
 export * from './definitie-synoniem.controller';
 export * from './synoniem.controller';
+export * from './user.controller';

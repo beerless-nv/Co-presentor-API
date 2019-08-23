@@ -146,7 +146,6 @@ export class SlideController {
     let url = (await this.getSlideImage(slide.afbeelding!, slide.presentatieID!));
     let video: any;
     let slideUrl: object;
-    console.log("TEST");
     if (slide.video) {
       video = (await this.getSlideVideo(slide));
       slideUrl = {
@@ -163,7 +162,6 @@ export class SlideController {
       }
     }
 
-    console.log(slideUrl);
     return slideUrl;
 
   }
@@ -310,9 +308,7 @@ export class SlideController {
     @inject(RestBindings.Http.RESPONSE) response: Response,
     @param.path.number('id') id: number,
   ): Promise<any> {
-
-    console.log('START');
-
+    console.log('voor declaraties');
     // Storage declarations
     const storage = new GoogleCloudStorage({
       projectId: process.env.GCLOUD_PROJECT,
@@ -323,47 +319,53 @@ export class SlideController {
     });
     const bucket = await storage.bucket(process.env.GCS_BUCKET!);
 
-    console.log("BEFORE DELETE");
-
+    console.log("voor remove slide video");
     // Delete previous video
     await this.removeSlideVideo(id);
 
-    console.log("AFTER DELETE");
-
+    console.log("voor upload");
     // Initiating upload
-    upload.single('file')(req, response, async err => {
+    let result = await upload.single('file')(req, response, err => {
       if (!req.file) {
         throw new HttpErrors[400]('Geen bestand geüpload!');
       }
+
+
+      console.log("Begin upload");
 
       // Blob declaration
       const blob = bucket.file("video/" + req.file.originalname)
       const blobStream = blob.createWriteStream();
 
+      console.log("voor on error");
       // Stream error
       blobStream.on('error', err => {
         throw err;
       });
 
-      console.log("UPLOAD TO GCS");
+      console.log("voor on finish");
       // Stream succes
-      let result = await blobStream.on('finish', async () => {
+      blobStream.on('finish', async () => {
         const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
-
-        //Get Slide object
-        let slideObject: any = (await this.findById(id));
-        let slide = slideObject['slide'];
-        slide.video = req.file.originalname;
-        this.updateById(id, slide)
-
-        return slide;
       });
 
+
+      console.log("voor findbyID");
+      //Get Slide object
+      this.findById(id).then((slideObject: any) => {
+        let slide = slideObject['slide'];
+        slide.video = req.file.originalname;
+        this.updateById(id, slide);
+        console.log(slide);
+      });
+
+
+      console.log("voor blobstream end");
       // Closing stream
       blobStream.end(req.file.buffer);
-
-      return result;
+      return;
     });
+    return;
   }
 
   @del('/deleteVideo/{id}', {
@@ -374,39 +376,40 @@ export class SlideController {
     },
   })
   async removeSlideVideo(@param.path.number('id') id: number): Promise<any> {
-    console.log("IN DELETE START");
     // Get slide object
-    console.log("TEST");
     let slideObject: any = await this.findById(id);
     let slide: Slide = slideObject['slide'];
 
+    // Get other slides
+    let slides = await this.find({ where: { video: slide.video } });
+
     if (slide.video) {
-      console.log('IN IF REMOVE')
-      // Declaration Google Cloud Storage
-      const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
-      const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
-      const BUCKETNAME = process.env.GCS_BUCKET;
+      if (slides.length === 1) {
+        // Declaration Google Cloud Storage
+        const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+        const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+        const BUCKETNAME = process.env.GCS_BUCKET;
 
-      const storage = new GoogleCloudStorage({
-        projectId: GOOGLE_CLOUD_PROJECT_ID,
-        keyFilename: GOOGLE_CLOUD_KEYFILE,
-      });
+        const storage = new GoogleCloudStorage({
+          projectId: GOOGLE_CLOUD_PROJECT_ID,
+          keyFilename: GOOGLE_CLOUD_KEYFILE,
+        });
 
-      // Get bucket
-      const bucket = storage.bucket(BUCKETNAME!);
+        // Get bucket
+        const bucket = storage.bucket(BUCKETNAME!);
 
-      // Delete file
-      let result = await bucket.file("video/" + slide.video).delete();
+        // Delete file
+        await bucket.file("video/" + slide.video).delete();
+      }
 
       // Update database
       slide.video = undefined;
-      await this.updateById(id, slide);
+      let result = await this.updateById(id, slide);
 
       // Return result
       return result
     }
     else {
-      console.log('IN ELSE REMOVE');
       return;
     }
   }
