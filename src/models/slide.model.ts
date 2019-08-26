@@ -36,6 +36,11 @@ export class Slide extends Entity {
   })
   video?: string;
 
+  @property({
+    type: 'string',
+  })
+  ssml?: string;
+
   constructor(data?: Partial<Slide>) {
     super(data);
   }

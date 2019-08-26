@@ -231,7 +231,7 @@ export class SlideController {
 
 
     // Get File
-    var filepath = '/' + presentatie.url + '/' + filename;
+    var filepath = '/' + presentatie.url + '/old/' + filename;
     var file = bucket.file(filepath);
     var datum = new Date()
     datum.setDate(datum.getDate() + 1);

@@ -33,7 +33,9 @@ import MulterGoogleCloudStorage from 'multer-google-storage';
 import { PresentatieSlideController } from '.';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import * as axios from 'axios';
-import { authenticate } from '@loopback/authentication';
+import { authenticate } from '@loopback/authentication'
+import * as imageHash from 'image-hash';
+import { SlideController } from './slide.controller';
 
 
 export class PresentatieController {
@@ -251,17 +253,22 @@ export class PresentatieController {
       upload.any()(request, response, async err => {
         if (err) return reject(err);
 
-        // Converting memory stored pptx
-        var result = await this.convertPPTx(request.files, naam, id);
+        let result;
 
-        //Remove existing slides
+        //Get old slides
+        let slides = await this.presentatieSlideController.find(id);
+
+        // Delete old db slides
         await this.presentatieSlideController.delete(id);
+
+        // Converting memory stored pptx
+        await this.convertPPTx(request.files, naam, id, slides);
+
 
         resolve({
           files: request.file,
           fields: (request as any).fields,
         });
-        return result;
       });
     });
   }
@@ -446,7 +453,7 @@ export class PresentatieController {
   }
 
   // Methoed for converting PPTX to JPG
-  async convertPPTx(files: any, presentatienaam: string, presentatieID: number) {
+  async convertPPTx(files: any, presentatienaam: string, presentatieID: number, oldSlides: Slide[]) {
     // Declarations for conversion
     var fs = require('fs');
     var cloudconvert = new (require('cloudconvert'))(process.env.CLOUDCONVERT);
@@ -457,7 +464,7 @@ export class PresentatieController {
     var teller = 1;
 
     //remove old slides
-    await this.removePresentatieSlides(presentatieID);
+    // await this.removePresentatieSlides(presentatieID);
 
     // Convert PPTX(base64 string) to JPG
     cloudconvert.convert({
@@ -472,36 +479,160 @@ export class PresentatieController {
           "projectid": process.env.GCLOUD_PROJECT,
           "bucket": process.env.GCS_BUCKET,
           "credentials": keyfile,
-          "path": presentatienaam + "/"
+          "path": presentatienaam + "/new/"
         }
       }
     }, async (err: any, result: any) => {
 
+      // Check if error
+      if (err) {
+        throw new HttpErrors[422](err);
+      }
+      // Declaration
+      const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+      const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+      const BUCKETNAME = process.env.GCS_BUCKET;
 
-      // Get filenames of slide images
-      if (result.data.output.files) {
-        slideUrl = result.data.output.files;
+      const storage = new GoogleCloudStorage({
+        projectId: GOOGLE_CLOUD_PROJECT_ID,
+        keyFilename: GOOGLE_CLOUD_KEYFILE,
+      });
 
-        // Create slides for presentatie
-        slideUrl.forEach(url => {
-          var slide = new Slide();
-          slide.afbeelding = url.toString();
-          slide.volgnummer = teller;
+      // Get bucket
+      const bucket = storage.bucket(BUCKETNAME!);
+
+      // Get presentation name
+      var presentatie = await this.presentatieRepository.findById(presentatieID);
+
+      let files = await bucket.getFiles({
+        prefix: presentatie.url + '/new/'
+      })
+
+      //Declarations for new images
+      var datum = new Date()
+      datum.setDate(datum.getDate() + 1);
+      var config = {
+        action: 'read',
+        expires: datum,
+      }
+
+      let newImages: any = [];
+
+      // Get new files
+      for (var i = 0; i < files.length; i++) {
+        for (var j = 0; j < files[i].length; j++) {
+          let imageInfo = await files[i][j].getMetadata();
+          let uri = await files[i][j].getSignedUrl(config);
+          const imageHashConfig = {
+            uri: uri[0]
+          };
+          newImages.push(await new Promise<any>((resolve, reject) => {
+            imageHash.imageHash(imageHashConfig, 16, true, (error: any, data: any) => {
+              if (error) throw error;
+              let infoObject = {
+                image: imageInfo[0].name,
+                hash: data
+              };
+              resolve(infoObject);
+            });
+          }));
+        }
+      }
+
+      // Get old files
+      let oldfiles = await bucket.getFiles({
+        prefix: presentatie.url + '/old/'
+      })
+
+      //Declarations for old images
+      var datum = new Date()
+      datum.setDate(datum.getDate() + 1);
+      var config = {
+        action: 'read',
+        expires: datum,
+      }
+
+      let oldImages: any = [];
+
+      // Get old files
+      for (var i = 0; i < oldfiles.length; i++) {
+        for (var j = 0; j < oldfiles[i].length; j++) {
+          let imageInfo = await oldfiles[i][j].getMetadata();
+          let uri = await oldfiles[i][j].getSignedUrl(config);
+          const imageHashConfig = {
+            uri: uri[0]
+          };
+          oldImages.push(await new Promise<any>((resolve, reject) => {
+            imageHash.imageHash(imageHashConfig, 16, true, (error: any, data: any) => {
+              if (error) throw error;
+              let infoObject = {
+                image: imageInfo[0].name,
+                hash: data
+              };
+              resolve(infoObject);
+            });
+          }));
+        }
+      }
+
+      console.log(oldImages);
+
+      for (var i = 0; i < newImages.length; i++) {
+        let exists = false;
+        let newFilename = path.basename(newImages[i].image);
+        for (var j = 0; j < oldImages.length; j++) {
+          if (newImages[i].hash === oldImages[j].hash) {
+            // Found same image
+            exists = true;
+
+            // Get filenames
+            let oldFilename = path.basename(oldImages[j].image);
+            let slide = new Slide;
+            console.log("ZIJN GELIJK");
+            console.log(oldFilename);
+
+            oldSlides.forEach(oldSlide => {
+              if (oldSlide.volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
+                slide = oldSlide;
+              }
+            });
+
+            console.log(slide);
+            slide.afbeelding = newFilename;
+            slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+            console.log("wel werk");
+            console.log(newImages[i]);
+            await this.presentatieSlideController.create(presentatieID, slide);
+          }
+        }
+        if (!exists) {
+          let slide = new Slide();
+          slide.afbeelding = newFilename;
+          slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
           slide.presentatieID = presentatieID;
-          this.presentatieSlideController.create(presentatieID, slide);
-          teller++;
+          console.log(slide);
+          await this.presentatieSlideController.create(presentatieID, slide);
+        }
+      }
+
+      // Delete old files
+      if (await bucket.getFiles({
+        prefix: presentatie.url + '/old/'
+      })) {
+        await bucket.deleteFiles({
+          prefix: presentatie.url + '/old/'
         });
       }
-      else {
-        var url = result.data.output.filename;
-        var slide = new Slide();
-        slide.afbeelding = url.toString();
-        slide.presentatieID = presentatieID
-        slide.volgnummer = teller;
-        this.presentatieSlideController.create(presentatieID, slide);
-      }
 
-      return result.data.output;
+      //Move new files to old
+      for (var i = 0; i < files.length; i++) {
+        for (var j = 0; j < files[i].length; j++) {
+          console.log(presentatie.url + '/old/' + path.basename(files[i][j].name))
+          await files[i][j].move(presentatie.url + '/old/' + path.basename(files[i][j].name));
+        };
+      };
+
+      return "Upload Success";
     });
   }
 
@@ -521,7 +652,7 @@ export class PresentatieController {
     const bucket = storage.bucket(BUCKETNAME!);
 
     // Get presentation name
-    var presentatie = await this.presentatieRepository.findById(presentatieId)
+    var presentatie = await this.presentatieRepository.findById(presentatieId);
 
     if (await bucket.getFiles({
       prefix: presentatie.url + '/'
