@@ -699,15 +699,18 @@ export class PresentatieController {
     let otherSlides = await this.presentatieSlideController.find(presentatieId, { where: { video: videoname } });
     let exists = false;
 
-    // otherSlides.forEach(otherSlide => {
-    //   if (otherSlide.presentatieID != presentatieId && otherSlide.video === videoname) {
-    //     if (bucket.file()) {
-    //       await bucket.deleteFiles({
-    //         prefix: '/'
-    //       });
-    //     }
-    //   }
-    // });
+    for (var i = 0; i < otherSlides.length; i++) {
+      if (otherSlides[i].presentatieID != presentatieId && otherSlides[i].video === videoname) {
+        return "Andere presentaties met deze video gevonden!";
+      }
+    }
+
+    let file = await bucket.file('video/' + videoname);
+    if (file) {
+      await file.delete();
+    }
+
+    return "Video verwijderd!";
   }
 
 }
