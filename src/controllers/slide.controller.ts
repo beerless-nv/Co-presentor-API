@@ -21,7 +21,7 @@ import {
   Response,
   HttpErrors,
 } from '@loopback/rest';
-import { Slide, SlideRelations } from '../models';
+import { Slide, SlideRelations, Presentatie } from '../models';
 import { inject } from '@loopback/context';
 import { SlideRepository } from '../repositories';
 import * as GoogleCloudStorage from '@google-cloud/storage';
@@ -323,6 +323,11 @@ export class SlideController {
     // Delete previous video
     await this.removeSlideVideo(id);
 
+    // Get slide object
+    let slideObject: any = await this.findById(id);
+    let slide = slideObject['slide'];
+    let naam = slide.naam;
+
     console.log("voor upload");
     // Initiating upload
     return new Promise<object>((resolve, reject) => {
@@ -338,48 +343,44 @@ export class SlideController {
           throw new HttpErrors[400]('Geen bestand geüpload!');
         }
 
-
-        console.log("Begin upload");
-
-        // Blob declaration
-        const blob = bucket.file("video/" + req.file.originalname)
-        const blobStream = blob.createWriteStream({
-          resumable: false,
-        });
-
-        console.log("voor on error");
-        // Stream error
-        await blobStream.on('error', err => {
-          throw err;
-        });
-
-        console.log("voor on finish");
-        // Stream succes
-        await blobStream.on('finish', async () => {
-          const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
-        });
-
-
-        console.log("voor findbyID");
         //Get Slide object
-        this.findById(id).then((slideObject: any) => {
+        this.findById(id).then(async (slideObject: any) => {
+          console.log(slideObject);
           let slide = slideObject['slide'];
-          slide.video = req.file.originalname;
-          this.updateById(id, slide);
-          console.log(slide);
-        });
+          this.presentatieController.findById(slide.presentatieID).then(async (presentatie: Presentatie) => {
+            slide.video = presentatie.naam + '/' + slide.volgnummer + '/' + req.file.originalname;
+            await this.updateById(id, slide);
+            const blob = bucket.file("video/" + presentatie.naam + '/' + slide.volgnummer + '/' + req.file.originalname)
+            console.log(slide);
 
+            // Blob declaration
+            const blobStream = blob.createWriteStream({
+              resumable: false,
+            });
 
-        console.log("voor blobstream end");
-        // Closing stream
-        await blobStream.end(req.file.buffer);
+            console.log("voor on error");
+            // Stream error
+            await blobStream.on('error', err => {
+              throw err;
+            });
 
-        resolve({
-          files: req.file,
-          fields: (req as any).fields,
-        });
+            console.log("voor on finish");
+            // Stream succes
+            await blobStream.on('finish', async () => {
+              const publicUrl = "https://storage.googleapis.com/" + bucket.name + "/" + blob.name;
+            });
 
-        return "test";
+            console.log("voor blobstream end");
+            // Closing stream
+            await blobStream.end(req.file.buffer);
+
+            resolve({
+              files: req.file,
+              fields: (req as any).fields,
+            });
+            return "test";
+          });
+        })
       });
     });
   }
@@ -416,7 +417,9 @@ export class SlideController {
         const bucket = storage.bucket(BUCKETNAME!);
 
         // Delete file
-        await bucket.file("video/" + slide.video).delete();
+        if (await bucket.file('video/' + slide.video)) {
+          await bucket.file("video/" + slide.video).delete();
+        }
       }
 
       // Update database
