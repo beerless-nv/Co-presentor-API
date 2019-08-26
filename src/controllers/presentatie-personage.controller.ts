@@ -17,23 +17,25 @@ import {
   del,
   requestBody,
 } from '@loopback/rest';
-import {PresentatiePersonage} from '../models';
-import {PresentatiePersonageRepository} from '../repositories';
+import { PresentatiePersonage } from '../models';
+import { PresentatiePersonageRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class PresentatiePersonageController {
   constructor(
     @repository(PresentatiePersonageRepository)
-    public presentatiePersonageRepository : PresentatiePersonageRepository,
-  ) {}
+    public presentatiePersonageRepository: PresentatiePersonageRepository,
+  ) { }
 
   @post('/presentatie-personages', {
     responses: {
       '200': {
         description: 'PresentatiePersonage model instance',
-        content: {'application/json': {schema: {'x-ts-type': PresentatiePersonage}}},
+        content: { 'application/json': { schema: { 'x-ts-type': PresentatiePersonage } } },
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() presentatiePersonage: PresentatiePersonage): Promise<PresentatiePersonage> {
     return await this.presentatiePersonageRepository.create(presentatiePersonage);
   }
@@ -42,10 +44,11 @@ export class PresentatiePersonageController {
     responses: {
       '200': {
         description: 'PresentatiePersonage model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(PresentatiePersonage)) where?: Where<PresentatiePersonage>,
   ): Promise<Count> {
@@ -58,12 +61,13 @@ export class PresentatiePersonageController {
         description: 'Array of PresentatiePersonage model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': PresentatiePersonage}},
+            schema: { type: 'array', items: { 'x-ts-type': PresentatiePersonage } },
           },
         },
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(PresentatiePersonage)) filter?: Filter<PresentatiePersonage>,
   ): Promise<PresentatiePersonage[]> {
@@ -74,15 +78,16 @@ export class PresentatiePersonageController {
     responses: {
       '200': {
         description: 'PresentatiePersonage PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(PresentatiePersonage, {partial: true}),
+          schema: getModelSchemaRef(PresentatiePersonage, { partial: true }),
         },
       },
     })
@@ -96,10 +101,11 @@ export class PresentatiePersonageController {
     responses: {
       '200': {
         description: 'PresentatiePersonage model instance',
-        content: {'application/json': {schema: {'x-ts-type': PresentatiePersonage}}},
+        content: { 'application/json': { schema: { 'x-ts-type': PresentatiePersonage } } },
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<PresentatiePersonage> {
     return await this.presentatiePersonageRepository.findById(id);
   }
@@ -111,12 +117,13 @@ export class PresentatiePersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(PresentatiePersonage, {partial: true}),
+          schema: getModelSchemaRef(PresentatiePersonage, { partial: true }),
         },
       },
     })
@@ -132,6 +139,7 @@ export class PresentatiePersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() presentatiePersonage: PresentatiePersonage,
@@ -146,6 +154,7 @@ export class PresentatiePersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.presentatiePersonageRepository.deleteById(id);
   }

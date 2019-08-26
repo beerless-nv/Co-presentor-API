@@ -30,6 +30,11 @@ export class User extends Entity {
   })
   lastName: string;
 
+  @property({
+    type: 'string',
+  })
+  code: string;
+
 
   constructor(data?: Partial<User>) {
     super(data);

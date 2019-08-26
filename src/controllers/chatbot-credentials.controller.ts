@@ -17,23 +17,25 @@ import {
   del,
   requestBody,
 } from '@loopback/rest';
-import {ChatbotCredentials} from '../models';
-import {ChatbotCredentialsRepository} from '../repositories';
+import { ChatbotCredentials } from '../models';
+import { ChatbotCredentialsRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class ChatbotCredentialsController {
   constructor(
     @repository(ChatbotCredentialsRepository)
-    public chatbotCredentialsRepository : ChatbotCredentialsRepository,
-  ) {}
+    public chatbotCredentialsRepository: ChatbotCredentialsRepository,
+  ) { }
 
   @post('/chatbot-credentials', {
     responses: {
       '200': {
         description: 'ChatbotCredentials model instance',
-        content: {'application/json': {schema: {'x-ts-type': ChatbotCredentials}}},
+        content: { 'application/json': { schema: { 'x-ts-type': ChatbotCredentials } } },
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() chatbotCredentials: ChatbotCredentials): Promise<ChatbotCredentials> {
     return await this.chatbotCredentialsRepository.create(chatbotCredentials);
   }
@@ -42,10 +44,11 @@ export class ChatbotCredentialsController {
     responses: {
       '200': {
         description: 'ChatbotCredentials model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(ChatbotCredentials)) where?: Where<ChatbotCredentials>,
   ): Promise<Count> {
@@ -58,12 +61,13 @@ export class ChatbotCredentialsController {
         description: 'Array of ChatbotCredentials model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': ChatbotCredentials}},
+            schema: { type: 'array', items: { 'x-ts-type': ChatbotCredentials } },
           },
         },
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(ChatbotCredentials)) filter?: Filter<ChatbotCredentials>,
   ): Promise<ChatbotCredentials[]> {
@@ -74,15 +78,16 @@ export class ChatbotCredentialsController {
     responses: {
       '200': {
         description: 'ChatbotCredentials PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(ChatbotCredentials, {partial: true}),
+          schema: getModelSchemaRef(ChatbotCredentials, { partial: true }),
         },
       },
     })
@@ -96,10 +101,11 @@ export class ChatbotCredentialsController {
     responses: {
       '200': {
         description: 'ChatbotCredentials model instance',
-        content: {'application/json': {schema: {'x-ts-type': ChatbotCredentials}}},
+        content: { 'application/json': { schema: { 'x-ts-type': ChatbotCredentials } } },
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<ChatbotCredentials> {
     return await this.chatbotCredentialsRepository.findById(id);
   }
@@ -111,12 +117,13 @@ export class ChatbotCredentialsController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(ChatbotCredentials, {partial: true}),
+          schema: getModelSchemaRef(ChatbotCredentials, { partial: true }),
         },
       },
     })
@@ -132,6 +139,7 @@ export class ChatbotCredentialsController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() chatbotCredentials: ChatbotCredentials,
@@ -146,6 +154,7 @@ export class ChatbotCredentialsController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.chatbotCredentialsRepository.deleteById(id);
   }

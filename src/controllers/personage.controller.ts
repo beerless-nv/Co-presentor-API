@@ -17,23 +17,25 @@ import {
   del,
   requestBody,
 } from '@loopback/rest';
-import {Personage} from '../models';
-import {PersonageRepository} from '../repositories';
+import { Personage } from '../models';
+import { PersonageRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class PersonageController {
   constructor(
     @repository(PersonageRepository)
-    public personageRepository : PersonageRepository,
-  ) {}
+    public personageRepository: PersonageRepository,
+  ) { }
 
   @post('/personages', {
     responses: {
       '200': {
         description: 'Personage model instance',
-        content: {'application/json': {schema: {'x-ts-type': Personage}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Personage } } },
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() personage: Personage): Promise<Personage> {
     return await this.personageRepository.create(personage);
   }
@@ -42,10 +44,11 @@ export class PersonageController {
     responses: {
       '200': {
         description: 'Personage model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Personage)) where?: Where<Personage>,
   ): Promise<Count> {
@@ -58,12 +61,13 @@ export class PersonageController {
         description: 'Array of Personage model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': Personage}},
+            schema: { type: 'array', items: { 'x-ts-type': Personage } },
           },
         },
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(Personage)) filter?: Filter<Personage>,
   ): Promise<Personage[]> {
@@ -74,15 +78,16 @@ export class PersonageController {
     responses: {
       '200': {
         description: 'Personage PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Personage, {partial: true}),
+          schema: getModelSchemaRef(Personage, { partial: true }),
         },
       },
     })
@@ -96,10 +101,11 @@ export class PersonageController {
     responses: {
       '200': {
         description: 'Personage model instance',
-        content: {'application/json': {schema: {'x-ts-type': Personage}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Personage } } },
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<Personage> {
     return await this.personageRepository.findById(id);
   }
@@ -111,12 +117,13 @@ export class PersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Personage, {partial: true}),
+          schema: getModelSchemaRef(Personage, { partial: true }),
         },
       },
     })
@@ -132,6 +139,7 @@ export class PersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() personage: Personage,
@@ -146,6 +154,7 @@ export class PersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.personageRepository.deleteById(id);
   }

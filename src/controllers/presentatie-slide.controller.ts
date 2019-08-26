@@ -19,7 +19,8 @@ import {
   Presentatie,
   Slide,
 } from '../models';
-import {PresentatieRepository} from '../repositories';
+import { PresentatieRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class PresentatieSlideController {
   constructor(
@@ -38,6 +39,7 @@ export class PresentatieSlideController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.path.number('id') id: number,
     @param.query.object('filter') filter?: Filter<Slide>,
@@ -53,6 +55,7 @@ export class PresentatieSlideController {
       },
     },
   })
+  @authenticate('jwt')
   async create(
     @param.path.number('id') id: typeof Presentatie.prototype.ID,
     @requestBody() slide: Slide,
@@ -68,12 +71,13 @@ export class PresentatieSlideController {
       },
     },
   })
+  @authenticate('jwt')
   async patch(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Slide, {partial: true}),
+          schema: getModelSchemaRef(Slide, { partial: true }),
         },
       },
     })
@@ -91,6 +95,7 @@ export class PresentatieSlideController {
       },
     },
   })
+  @authenticate('jwt')
   async delete(
     @param.path.number('id') id: number,
     @param.query.object('where', getWhereSchemaFor(Slide)) where?: Where<Slide>,

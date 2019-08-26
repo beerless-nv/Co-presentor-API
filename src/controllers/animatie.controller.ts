@@ -17,8 +17,9 @@ import {
   del,
   requestBody,
 } from '@loopback/rest';
-import {Animatie} from '../models';
-import {AnimatieRepository} from '../repositories';
+import { Animatie } from '../models';
+import { AnimatieRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class AnimatieController {
   constructor(
@@ -31,10 +32,11 @@ export class AnimatieController {
     responses: {
       '200': {
         description: 'Animatie model instance',
-        content: {'application/json': {schema: {'x-ts-type': Animatie}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Animatie } } },
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() animatie: Animatie): Promise<Animatie> {
     return await this.animatieRepository.create(animatie);
   }
@@ -43,10 +45,11 @@ export class AnimatieController {
     responses: {
       '200': {
         description: 'Animatie model count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Animatie)) where?: Where<Animatie>,
   ): Promise<Count> {
@@ -59,12 +62,13 @@ export class AnimatieController {
         description: 'Array of Animatie model instances',
         content: {
           'application/json': {
-            schema: {type: 'array', items: {'x-ts-type': Animatie}},
+            schema: { type: 'array', items: { 'x-ts-type': Animatie } },
           },
         },
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(Animatie)) filter?: Filter<Animatie>,
   ): Promise<Animatie[]> {
@@ -75,19 +79,20 @@ export class AnimatieController {
     responses: {
       '200': {
         description: 'Animatie PATCH success count',
-        content: {'application/json': {schema: CountSchema}},
+        content: { 'application/json': { schema: CountSchema } },
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Animatie, {partial: true}),
+          schema: getModelSchemaRef(Animatie, { partial: true }),
         },
       },
     })
-      animatie: Animatie,
+    animatie: Animatie,
     @param.query.object('where', getWhereSchemaFor(Animatie)) where?: Where<Animatie>,
   ): Promise<Count> {
     return await this.animatieRepository.updateAll(animatie, where);
@@ -97,10 +102,11 @@ export class AnimatieController {
     responses: {
       '200': {
         description: 'Animatie model instance',
-        content: {'application/json': {schema: {'x-ts-type': Animatie}}},
+        content: { 'application/json': { schema: { 'x-ts-type': Animatie } } },
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<Animatie> {
     return await this.animatieRepository.findById(id);
   }
@@ -112,16 +118,17 @@ export class AnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Animatie, {partial: true}),
+          schema: getModelSchemaRef(Animatie, { partial: true }),
         },
       },
     })
-      animatie: Animatie,
+    animatie: Animatie,
   ): Promise<void> {
     await this.animatieRepository.updateById(id, animatie);
   }
@@ -133,6 +140,7 @@ export class AnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() animatie: Animatie,
@@ -147,6 +155,7 @@ export class AnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.animatieRepository.deleteById(id);
   }

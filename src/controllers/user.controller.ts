@@ -54,6 +54,9 @@ export class UserController {
     })
     user: Omit<User, 'id'>,
   ): Promise<User> {
+    if (user.code !== 'ToThePoint') {
+      throw new HttpErrors[401]('Toegang geweigerd, code is verkeerd!');
+    }
     // ensure a valid email value and password value
     validateCredentials(_.pick(user, ['email', 'password']));
 
@@ -75,6 +78,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(User)) where?: Where<User>,
   ): Promise<Count> {
@@ -93,6 +97,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(User)) filter?: Filter<User>,
   ): Promise<User[]> {
@@ -107,6 +112,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
@@ -129,6 +135,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<User> {
     return await this.userRepository.findById(id);
   }
@@ -140,6 +147,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -161,6 +169,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() user: User,
@@ -175,6 +184,7 @@ export class UserController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.userRepository.deleteById(id);
   }

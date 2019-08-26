@@ -19,7 +19,8 @@ import {
   Personage,
   Animatie,
 } from '../models';
-import {PersonageRepository} from '../repositories';
+import { PersonageRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class PersonageAnimatieController {
   constructor(
@@ -38,6 +39,7 @@ export class PersonageAnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.path.number('id') id: number,
     @param.query.object('filter') filter?: Filter<Animatie>,
@@ -53,6 +55,7 @@ export class PersonageAnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async create(
     @param.path.number('id') id: typeof Personage.prototype.ID,
     @requestBody() animatie: Animatie,
@@ -68,12 +71,13 @@ export class PersonageAnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async patch(
     @param.path.number('id') id: number,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Animatie, {partial: true}),
+          schema: getModelSchemaRef(Animatie, { partial: true }),
         },
       },
     })
@@ -91,6 +95,7 @@ export class PersonageAnimatieController {
       },
     },
   })
+  @authenticate('jwt')
   async delete(
     @param.path.number('id') id: number,
     @param.query.object('where', getWhereSchemaFor(Animatie)) where?: Where<Animatie>,

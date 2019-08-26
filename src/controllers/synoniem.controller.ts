@@ -22,6 +22,7 @@ import { Synoniem } from '../models';
 import { SynoniemRepository } from '../repositories';
 import { PresentatieController, DefinitieController } from '.';
 import * as axios from 'axios';
+import { authenticate } from '@loopback/authentication';
 
 export class SynoniemController {
   constructor(
@@ -39,6 +40,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async create(
     @requestBody({
       content: {
@@ -60,6 +62,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Synoniem)) where?: Where<Synoniem>,
   ): Promise<Count> {
@@ -92,6 +95,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
@@ -114,6 +118,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<Synoniem> {
     return await this.synoniemRepository.findById(id);
   }
@@ -125,6 +130,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -146,6 +152,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() synoniem: Synoniem,
@@ -171,6 +178,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async updateSynoniemen(
     @requestBody()
     data: any,

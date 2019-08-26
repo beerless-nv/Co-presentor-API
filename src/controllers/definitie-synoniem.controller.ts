@@ -20,6 +20,7 @@ import {
   Synoniem,
 } from '../models';
 import { DefinitieRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class DefinitieSynoniemController {
   constructor(
@@ -38,6 +39,7 @@ export class DefinitieSynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.path.number('id') id: number,
     @param.query.object('filter') filter?: Filter<Synoniem>,
@@ -53,6 +55,7 @@ export class DefinitieSynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async create(
     @param.path.number('id') id: typeof Definitie.prototype.ID,
     @requestBody({
@@ -74,6 +77,7 @@ export class DefinitieSynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async patch(
     @param.path.number('id') id: number,
     @requestBody({
@@ -97,6 +101,7 @@ export class DefinitieSynoniemController {
       },
     },
   })
+  @authenticate('jwt')
   async delete(
     @param.path.number('id') id: number,
     @param.query.object('where', getWhereSchemaFor(Synoniem)) where?: Where<Synoniem>,

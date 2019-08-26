@@ -31,6 +31,7 @@ import { Application } from '@loopback/core';
 import * as multer from 'multer';
 import { runInNewContext } from 'vm';
 import { Server, request } from 'https';
+import { authenticate } from '@loopback/authentication';
 
 export class SlideController {
   constructor(
@@ -47,6 +48,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() slide: Slide): Promise<Slide> {
     return await this.slideRepository.create(slide);
   }
@@ -59,6 +61,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Slide)) where?: Where<Slide>,
   ): Promise<Count> {
@@ -77,6 +80,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(Slide)) filter?: Filter<Slide>,
   ): Promise<Array<any>> {
@@ -118,6 +122,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
@@ -173,6 +178,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -208,6 +214,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.slideRepository.deleteById(id);
   }
@@ -291,6 +298,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   // Function to upload Video
   async uploadVideo(
     @requestBody({
@@ -392,6 +400,7 @@ export class SlideController {
       },
     },
   })
+  @authenticate('jwt')
   async removeSlideVideo(@param.path.number('id') id: number): Promise<any> {
     console.log("STart REMOVE");
     // Get slide object

@@ -9,7 +9,8 @@ import {
   PresentatiePersonage,
   Personage,
 } from '../models';
-import {PresentatiePersonageRepository} from '../repositories';
+import { PresentatiePersonageRepository } from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class PresentatiePersonagePersonageController {
   constructor(
@@ -29,6 +30,7 @@ export class PresentatiePersonagePersonageController {
       },
     },
   })
+  @authenticate('jwt')
   async getPersonage(
     @param.path.number('id') id: typeof PresentatiePersonage.prototype.ID,
   ): Promise<Personage> {

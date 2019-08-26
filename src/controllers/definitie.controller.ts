@@ -21,6 +21,7 @@ import {
 import { Definitie } from '../models';
 import { DefinitieRepository } from '../repositories';
 import * as axios from 'axios';
+import { authenticate } from '@loopback/authentication';
 
 export class DefinitieController {
   constructor(
@@ -36,6 +37,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async create(@requestBody() definitie: Definitie): Promise<Definitie> {
     if ((await this.find({ where: { naam: definitie.naam } })).length == 0) {
       //Create oswald entity
@@ -57,6 +59,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async count(
     @param.query.object('where', getWhereSchemaFor(Definitie)) where?: Where<Definitie>,
   ): Promise<Count> {
@@ -75,6 +78,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async find(
     @param.query.object('filter', getFilterSchemaFor(Definitie)) filter?: Filter<Definitie>,
   ): Promise<Definitie[]> {
@@ -89,6 +93,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async updateAll(
     @requestBody({
       content: {
@@ -111,6 +116,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async findById(@param.path.number('id') id: number): Promise<Definitie> {
     return await this.definitieRepository.findById(id);
   }
@@ -122,6 +128,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async updateById(
     @param.path.number('id') id: number,
     @requestBody({
@@ -158,6 +165,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async replaceById(
     @param.path.number('id') id: number,
     @requestBody() definitie: Definitie,
@@ -176,6 +184,7 @@ export class DefinitieController {
       },
     },
   })
+  @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
 
     // Delete oswald entity
