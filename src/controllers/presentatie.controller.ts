@@ -591,15 +591,22 @@ export class PresentatieController {
             console.log("ZIJN GELIJK");
             console.log(oldFilename);
 
-            oldSlides.forEach(oldSlide => {
-              if (oldSlide.volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
-                slide = oldSlide;
-              }
-            });
+            if (oldSlides.length < 2) {
+              slide = oldSlides[0];
+              slide.volgnummer = 1;
+            }
+            else {
+              oldSlides.forEach(oldSlide => {
+                if (oldSlide.volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
+                  slide = oldSlide;
+                }
+              });
+              slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+            }
 
             console.log(slide);
             slide.afbeelding = newFilename;
-            slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+
             console.log("wel werk");
             console.log(newImages[i]);
             await this.presentatieSlideController.create(presentatieID, slide);
@@ -608,7 +615,12 @@ export class PresentatieController {
         if (!exists) {
           let slide = new Slide();
           slide.afbeelding = newFilename;
-          slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+          if (newImages.length < 2) {
+            slide.volgnummer = 1;
+          }
+          else {
+            slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+          }
           slide.presentatieID = presentatieID;
           console.log(slide);
           await this.presentatieSlideController.create(presentatieID, slide);
@@ -663,6 +675,39 @@ export class PresentatieController {
     }
 
     await this.presentatieSlideController.delete(presentatieId);
+  }
+
+  async removePresentatieVideo(presentatieId: number) {
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    // Get video name
+    let slides = await this.presentatieSlideController.find(presentatieId);
+    let videoname = slides[0].video;
+
+    // Check if there are other presentations with video
+    let otherSlides = await this.presentatieSlideController.find(presentatieId, { where: { video: videoname } });
+    let exists = false;
+
+    // otherSlides.forEach(otherSlide => {
+    //   if (otherSlide.presentatieID != presentatieId && otherSlide.video === videoname) {
+    //     if (bucket.file()) {
+    //       await bucket.deleteFiles({
+    //         prefix: '/'
+    //       });
+    //     }
+    //   }
+    // });
   }
 
 }
