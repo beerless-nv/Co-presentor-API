@@ -12,6 +12,10 @@ instance_class: B4
 basic_scaling:
   max_instances: 1
 
+env_variables:
+  DB_URL: "mysql://root:sselreeB1998@/cloudsql/co-presenter-247006:europe-west1:co-presenter-db:3306/coPresenter"
+  NODE_ENV: "production"
+
 handlers:
 - url: /.*
   secure: always
@@ -23,3 +27,5 @@ beta_settings:
   # 'gcloud beta sql instances describe [INSTANCE_NAME]' or from
   # the Instance details page in the Google Cloud Platform Console.
   cloud_sql_instances: co-presenter-247006:europe-west1:co-presenter-db
+
+

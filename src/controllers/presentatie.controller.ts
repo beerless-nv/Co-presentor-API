@@ -204,11 +204,14 @@ export class PresentatieController {
   @authenticate('jwt')
   async deleteById(@param.path.number('id') id: number): Promise<void> {
 
-    //delete video in presentation
-    await this.removePresentatieVideo(id);
+    let slides = await this.presentatieSlideController.find(id);
+    if (slides.length > 0) {
+      //delete video in presentation
+      await this.removePresentatieVideo(id);
 
-    //delete slides in google cloud
-    await this.removePresentatieSlides(id);
+      //delete slides in google cloud
+      await this.removePresentatieSlides(id);
+    }
 
     //Implement Oswald delete entity
     await this.deletePresentatieEntity(id);
@@ -698,35 +701,16 @@ export class PresentatieController {
 
     // Get video name
     let slides = await this.presentatieSlideController.find(presentatieId);
-    let videoname: any;
 
     // Get video name
     await new Promise<any>((resolve, reject) => {
       slides.forEach(slide => {
         if (slide.video) {
-          videoname = slide.video;
+          bucket.file('video/' + slide.video).delete();
         }
       });
       resolve();
-    })
-
-
-    // Check if there are other presentations with video
-    let otherSlides = await this.presentatieSlideController.find(presentatieId, { where: { video: videoname } });
-
-    let exists = await new Promise<any>((resolve, reject) => {
-      let found;
-      for (var i = 0; i < otherSlides.length; i++) {
-        if (otherSlides[i].presentatieID != presentatieId && otherSlides[i].video === videoname) {
-          resolve(true);
-        }
-      }
-      resolve(false);
     });
-
-    if (!exists) {
-      await bucket.file('video/' + videoname).delete()
-    }
 
     return "Video verwijderd!";
   }

@@ -22,6 +22,7 @@ import {
 import { PasswordHasherBindings } from './keys';
 import { BcryptHasher } from './services/hash.password.bcryptjs';
 import { MyUserService } from './services/user-service';
+import * as admin from 'firebase-admin';
 
 export class CoPresenterApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -45,6 +46,9 @@ export class CoPresenterApplication extends BootMixin(
       };
       this.bind('datasources.config.MySQLDB').to(dataSourceConfig);
     }
+
+    // setup Firebase Cloud Messaging
+    this.setUpFCM();
 
     // Bind authentication component related elements
     this.component(AuthenticationComponent);
@@ -94,5 +98,16 @@ export class CoPresenterApplication extends BootMixin(
     this.bind(PasswordHasherBindings.PASSWORD_HASHER).toClass(BcryptHasher);
 
     this.bind(UserServiceBindings.USER_SERVICE).toClass(MyUserService);
+  }
+
+  setUpFCM() {
+    const serviceAccount = require('../co-presenter-247006-firebase-adminsdk-f6vj3-0c51cac660.json');
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: "https://co-presenter-247006.firebaseio.com"
+    });
+
+    const registrationToken = process.env.FCM_ANDROID_REGISTRATION_TOKEN;
   }
 }
