@@ -81,6 +81,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate("jwt")
   async find(
     @param.query.object('filter', getFilterSchemaFor(Synoniem)) filter?: Filter<Synoniem>,
   ): Promise<Synoniem[]> {
@@ -167,6 +168,7 @@ export class SynoniemController {
       },
     },
   })
+  @authenticate("jwt")
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.synoniemRepository.deleteById(id);
   }

@@ -10,8 +10,11 @@ import { User } from './models';
 import { Credentials } from './repositories';
 
 export namespace TokenServiceConstants {
-  export const TOKEN_SECRET_VALUE = 'myjwts3cr3t';
-  export const TOKEN_EXPIRES_IN_VALUE = '604800';
+  // Set up dotenv
+  require('dotenv').config();
+
+  export const TOKEN_SECRET_VALUE = process.env.JWT_SECRET_VALUE;
+  export const TOKEN_EXPIRES_IN_VALUE = '3153600000';
 }
 
 export namespace TokenServiceBindings {

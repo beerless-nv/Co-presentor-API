@@ -84,7 +84,7 @@ export class CoPresenterApplication extends BootMixin(
   setUpBindings(): void {
 
     this.bind(TokenServiceBindings.TOKEN_SECRET).to(
-      TokenServiceConstants.TOKEN_SECRET_VALUE,
+      TokenServiceConstants.TOKEN_SECRET_VALUE!,
     );
 
     this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to(

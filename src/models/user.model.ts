@@ -1,4 +1,5 @@
-import { Entity, model, property } from '@loopback/repository';
+import { Entity, model, property, hasMany} from '@loopback/repository';
+import {RegistrationToken} from './registration-token.model';
 
 @model({ settings: {} })
 export class User extends Entity {
@@ -35,6 +36,8 @@ export class User extends Entity {
   })
   code: string;
 
+  @hasMany(() => RegistrationToken)
+  registrationTokens: RegistrationToken[];
 
   constructor(data?: Partial<User>) {
     super(data);

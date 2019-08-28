@@ -15,3 +15,5 @@ export * from './definitie-synoniem.controller';
 export * from './synoniem.controller';
 export * from './user.controller';
 export * from './send-messages.controller';
+export * from './user-registration-token.controller';
+export * from './registration-token.controller';

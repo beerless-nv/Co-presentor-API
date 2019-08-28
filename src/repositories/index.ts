@@ -7,3 +7,4 @@ export * from './presentatie.repository';
 export * from './slide.repository';
 export * from './synoniem.repository';
 export * from './user.repository';
+export * from './registration-token.repository';

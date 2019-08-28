@@ -4,7 +4,6 @@ import {
   Filter,
   repository,
   Where,
-  model,
 } from '@loopback/repository';
 import {
   post,
@@ -27,15 +26,11 @@ import * as multer from 'multer';
 import * as path from 'path';
 import { Presentatie, Slide } from '../models';
 import { PresentatieRepository } from '../repositories';
-import * as fs from 'fs';
-import { Http2SecureServer } from 'http2';
-import MulterGoogleCloudStorage from 'multer-google-storage';
 import { PresentatieSlideController } from '.';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import * as axios from 'axios';
 import { authenticate } from '@loopback/authentication'
 import * as imageHash from 'image-hash';
-import { SlideController } from './slide.controller';
 
 
 export class PresentatieController {

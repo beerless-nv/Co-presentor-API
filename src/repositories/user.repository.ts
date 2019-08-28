@@ -1,7 +1,8 @@
-import { DefaultCrudRepository } from '@loopback/repository';
-import { User, UserRelations } from '../models';
+import { DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
+import { User, UserRelations, RegistrationToken} from '../models';
 import { MySqldbDataSource } from '../datasources';
-import { inject } from '@loopback/core';
+import { inject, Getter} from '@loopback/core';
+import {RegistrationTokenRepository} from './registration-token.repository';
 
 export type Credentials = {
   email: string;
@@ -13,9 +14,13 @@ export class UserRepository extends DefaultCrudRepository<
   typeof User.prototype.ID,
   UserRelations
   > {
+
+  public readonly registrationTokens: HasManyRepositoryFactory<RegistrationToken, typeof User.prototype.ID>;
+
   constructor(
-    @inject('datasources.MySQLDB') dataSource: MySqldbDataSource,
+    @inject('datasources.MySQLDB') dataSource: MySqldbDataSource, @repository.getter('RegistrationTokenRepository') protected registrationTokenRepositoryGetter: Getter<RegistrationTokenRepository>,
   ) {
     super(User, dataSource);
+    this.registrationTokens = this.createHasManyRepositoryFactoryFor('registrationTokens', registrationTokenRepositoryGetter,);
   }
 }
