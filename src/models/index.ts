@@ -8,3 +8,4 @@ export * from './slide.model';
 export * from './synoniem.model';
 export * from './user.model';
 export * from './registration-token.model';
+export * from './zwevende-tekst.model';

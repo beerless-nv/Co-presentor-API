@@ -24,13 +24,14 @@ import {
 import { inject } from '@loopback/context';
 import * as multer from 'multer';
 import * as path from 'path';
-import { Presentatie, Slide } from '../models';
+import { Presentatie, Slide, ZwevendeTekst } from '../models';
 import { PresentatieRepository } from '../repositories';
-import { PresentatieSlideController } from '.';
+import { PresentatieSlideController, PresentatieZwevendeTekstController } from '.';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import * as axios from 'axios';
 import { authenticate } from '@loopback/authentication'
 import * as imageHash from 'image-hash';
+import { resolve } from 'dns';
 
 
 export class PresentatieController {
@@ -38,6 +39,7 @@ export class PresentatieController {
     @repository(PresentatieRepository)
     public presentatieRepository: PresentatieRepository,
     @inject('controllers.PresentatieSlideController') public presentatieSlideController: PresentatieSlideController,
+    @inject('controllers.PresentatieZwevendeTekstController') public presentatieZwevendeTekstController: PresentatieZwevendeTekstController,
   ) { }
 
   @post('/presentaties', {
@@ -465,6 +467,8 @@ export class PresentatieController {
     var filename = files[0].originalname;
     var slideUrl = new Array<String>();
     var teller = 1;
+    let zwevendeSlides = JSON.parse(JSON.stringify(oldSlides));
+    let newSlides = new Array<Slide>();
 
     //remove old slides
     // await this.removePresentatieSlides(presentatieID);
@@ -491,164 +495,209 @@ export class PresentatieController {
       if (err) {
         throw new HttpErrors[422](err);
       }
-      // Declaration
-      const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
-      const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
-      const BUCKETNAME = process.env.GCS_BUCKET;
-
-      const storage = new GoogleCloudStorage({
-        projectId: GOOGLE_CLOUD_PROJECT_ID,
-        keyFilename: GOOGLE_CLOUD_KEYFILE,
-      });
-
-      // Get bucket
-      const bucket = storage.bucket(BUCKETNAME!);
 
       // Get presentation name
       var presentatie = await this.presentatieRepository.findById(presentatieID);
 
-      let files = await bucket.getFiles({
-        prefix: presentatie.url + '/new/'
-      })
-
-      //Declarations for new images
-      var datum = new Date()
-      datum.setDate(datum.getDate() + 1);
-      var config = {
-        action: 'read',
-        expires: datum,
-      }
-
-      let newImages: any = [];
-
-      // Get new files
-      for (var i = 0; i < files.length; i++) {
-        for (var j = 0; j < files[i].length; j++) {
-          let imageInfo = await files[i][j].getMetadata();
-          let uri = await files[i][j].getSignedUrl(config);
-          const imageHashConfig = {
-            uri: uri[0]
-          };
-          newImages.push(await new Promise<any>((resolve, reject) => {
-            imageHash.imageHash(imageHashConfig, 16, true, (error: any, data: any) => {
-              if (error) throw error;
-              let infoObject = {
-                image: imageInfo[0].name,
-                hash: data
-              };
-              resolve(infoObject);
-            });
-          }));
-        }
-      }
-
-      // Get old files
-      let oldfiles = await bucket.getFiles({
-        prefix: presentatie.url + '/old/'
-      })
-
-      //Declarations for old images
-      var datum = new Date()
-      datum.setDate(datum.getDate() + 1);
-      var config = {
-        action: 'read',
-        expires: datum,
-      }
-
-      let oldImages: any = [];
-
-      // Get old files
-      for (var i = 0; i < oldfiles.length; i++) {
-        for (var j = 0; j < oldfiles[i].length; j++) {
-          let imageInfo = await oldfiles[i][j].getMetadata();
-          let uri = await oldfiles[i][j].getSignedUrl(config);
-          const imageHashConfig = {
-            uri: uri[0]
-          };
-          oldImages.push(await new Promise<any>((resolve, reject) => {
-            imageHash.imageHash(imageHashConfig, 16, true, (error: any, data: any) => {
-              if (error) throw error;
-              let infoObject = {
-                image: imageInfo[0].name,
-                hash: data
-              };
-              resolve(infoObject);
-            });
-          }));
-        }
-      }
-
-      console.log(oldImages);
+      //Get slides
+      let newImages = await this.getSlides(presentatie.url + '/new/');
+      let oldImages = await this.getSlides(presentatie.url + '/old/');
 
       for (var i = 0; i < newImages.length; i++) {
         let exists = false;
         let newFilename = path.basename(newImages[i].image);
         for (var j = 0; j < oldImages.length; j++) {
-          if (newImages[i].hash === oldImages[j].hash) {
+          if (newImages[i].hash === oldImages[j].hash && !newImages[i].bekeken) {
             // Found same image
             exists = true;
 
-            // Get filenames
-            let oldFilename = path.basename(oldImages[j].image);
-            let slide = new Slide;
-            console.log("ZIJN GELIJK");
-            console.log(oldFilename);
+            //Create existing slide
+            await this.createExistingSlide(oldSlides, oldImages[j], presentatieID, newFilename, newImages[i], zwevendeSlides, newSlides)
 
-            if (oldSlides.length < 2) {
-              slide = oldSlides[0];
-              slide.volgnummer = 1;
-            }
-            else {
-              oldSlides.forEach(oldSlide => {
-                if (oldSlide.volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
-                  slide = oldSlide;
-                }
-              });
-              slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
-            }
-
-            console.log(slide);
-            slide.afbeelding = newFilename;
-
-            console.log("wel werk");
-            console.log(newImages[i]);
-            await this.presentatieSlideController.create(presentatieID, slide);
           }
         }
         if (!exists) {
-          let slide = new Slide();
-          slide.afbeelding = newFilename;
-          if (newImages.length < 2) {
-            slide.volgnummer = 1;
-          }
-          else {
-            slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
-          }
-          slide.presentatieID = presentatieID;
-          console.log(slide);
-          await this.presentatieSlideController.create(presentatieID, slide);
+          // Create non existing slide
+          await this.createNonExistingSlide(newFilename, presentatieID, newImages, newImages[i]);
         }
       }
 
+      // Create floating text
+      await this.createFloatingText(zwevendeSlides, presentatieID);
+
       // Delete old files
-      if (await bucket.getFiles({
-        prefix: presentatie.url + '/old/'
-      })) {
-        await bucket.deleteFiles({
-          prefix: presentatie.url + '/old/'
-        });
-      }
+      await this.deleteSlides(presentatie.url + '/old/');
+
+      // Get new files
+      let files = await this.getFiles(presentatie.url + '/new/');
 
       //Move new files to old
-      for (var i = 0; i < files.length; i++) {
-        for (var j = 0; j < files[i].length; j++) {
-          console.log(presentatie.url + '/old/' + path.basename(files[i][j].name))
-          await files[i][j].move(presentatie.url + '/old/' + path.basename(files[i][j].name));
-        };
-      };
+      await this.moveSlides(files, presentatie.url + '/old/');
 
       return "Upload Success";
     });
+  }
+
+  async getFiles(prefix: any) {
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    return await bucket.getFiles({
+      prefix: prefix
+    });
+  }
+
+  async createExistingSlide(oldSlides: any, oldImage: any, presentatieID: number, newFilename: any, newImage: any, zwevendeSlides: any, newSlides: any) {
+    console.log("CreateExisting");
+    // Get filenames
+    let oldFilename = path.basename(oldImage.image);
+    let slide = new Slide;
+
+    if (oldSlides.length < 2) {
+      slide = oldSlides[0];
+      slide.volgnummer = 1;
+    }
+    else {
+      for (var k = 0; k < oldSlides.length; k++) {
+        if (oldSlides[k].volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
+          slide = JSON.parse(JSON.stringify(oldSlides[k]));
+          await new Promise<any>((resolve, reject) => {
+            zwevendeSlides.splice(zwevendeSlides.findIndex((zwevendeSlide: any) => {
+              return zwevendeSlide.ID === oldSlides[k].ID;
+            }), 1);
+            // let pos = zwevendeSlides.map((slide:  any) => slide.volgnummer).indexOf(oldSlides[k].volgnummer);
+            resolve();
+          });
+          slide.ID = undefined;
+        }
+      }
+      slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+    }
+
+    slide.afbeelding = newFilename;
+    await this.presentatieSlideController.create(presentatieID, slide);
+    newImage.bekeken = true;
+
+    return;
+  }
+
+  async createNonExistingSlide(newFilename: any, presentatieID: number, newImages: any, newImage: any) {
+    console.log("CreateNonExisting");
+    let slide = new Slide();
+    slide.afbeelding = newFilename;
+    if (newImages.length < 2) {
+      slide.volgnummer = 1;
+    }
+    else {
+      slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+    }
+    slide.presentatieID = presentatieID;
+    await this.presentatieSlideController.create(presentatieID, slide);
+    newImage.bekeken = true;
+
+    return;
+  }
+
+  async createFloatingText(slides: any, presentatieID: number) {
+    console.log("CreateFloating");
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].tekst !== null && slides[i].ssml !== null) {
+        let zwevendeTekst = new ZwevendeTekst();
+        zwevendeTekst.ssml = slides[i].ssml;
+        zwevendeTekst.tekst = slides[i].tekst;
+        await this.presentatieZwevendeTekstController.create(presentatieID, zwevendeTekst);
+      }
+    }
+
+    return;
+  }
+
+  async moveSlides(files: any, prefix: string) {
+    console.log("MoveSlides");
+    for (var i = 0; i < files.length; i++) {
+      for (var j = 0; j < files[i].length; j++) {
+        await files[i][j].move(prefix + path.basename(files[i][j].name));
+      };
+    };
+
+    return;
+  }
+
+  async deleteSlides(prefix: string) {
+    console.log("DeleteSlides");
+    // Declaration
+    const GOOGLE_CLOUD_PROJECT_ID = process.env.GCLOUD_PROJECT;
+    const GOOGLE_CLOUD_KEYFILE = process.env.GCS_KEYFILE;
+    const BUCKETNAME = process.env.GCS_BUCKET;
+
+    const storage = new GoogleCloudStorage({
+      projectId: GOOGLE_CLOUD_PROJECT_ID,
+      keyFilename: GOOGLE_CLOUD_KEYFILE,
+    });
+
+    // Get bucket
+    const bucket = storage.bucket(BUCKETNAME!);
+
+    if (await bucket.getFiles({
+      prefix: prefix
+    })) {
+      await bucket.deleteFiles({
+        prefix: prefix
+      });
+    }
+
+    return;
+  }
+
+  async getSlides(prefix: string) {
+    console.log("GetSlides");
+
+    // Get files
+    let files = await this.getFiles(prefix);
+
+    //Declarations for new images
+    var datum = new Date()
+    datum.setDate(datum.getDate() + 1);
+    var config = {
+      action: 'read',
+      expires: datum,
+    }
+
+    let Images: any = [];
+
+    // Get new files
+    for (var i = 0; i < files.length; i++) {
+      for (var j = 0; j < files[i].length; j++) {
+        let imageInfo = await files[i][j].getMetadata();
+        let uri = await files[i][j].getSignedUrl(config);
+        const imageHashConfig = {
+          uri: uri[0]
+        };
+        Images.push(await new Promise<any>((resolve, reject) => {
+          imageHash.imageHash(imageHashConfig, 16, true, (error: any, data: any) => {
+            if (error) throw error;
+            let infoObject = {
+              image: imageInfo[0].name,
+              hash: data,
+              bekeken: false
+            };
+            resolve(infoObject);
+          });
+        }));
+      }
+    }
+
+    return Images;
   }
 
   async removePresentatieSlides(presentatieId: number) {
@@ -706,8 +755,6 @@ export class PresentatieController {
       });
       resolve();
     });
-
     return "Video verwijderd!";
   }
-
 }

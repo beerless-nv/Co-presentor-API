@@ -1,6 +1,7 @@
 import { Entity, model, property, hasMany } from '@loopback/repository';
 import { Slide } from './slide.model';
 import { Synoniem } from './synoniem.model';
+import {ZwevendeTekst} from './zwevende-tekst.model';
 
 @model({ settings: {} })
 export class Presentatie extends Entity {
@@ -31,6 +32,9 @@ export class Presentatie extends Entity {
 
   @hasMany(() => Synoniem)
   synoniems: Synoniem[];
+
+  @hasMany(() => ZwevendeTekst)
+  zwevendeTeksts: ZwevendeTekst[];
 
   constructor(data?: Partial<Presentatie>) {
     super(data);
