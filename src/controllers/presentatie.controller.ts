@@ -560,13 +560,22 @@ export class PresentatieController {
     let oldFilename = path.basename(oldImage.image);
     let slide = new Slide;
 
+    // Get old filenumber
+    let indexofoldHyphen = oldFilename.lastIndexOf("-");
+    let oldfileNumber = parseInt(oldFilename[indexofoldHyphen + 1]);
+
+    // Get new filenumber
+    let indexOfNewHyphen = newFilename.lastIndexOf("-");
+    let newFileNumber = parseInt(newFilename[indexOfNewHyphen + 1]);
+
     if (oldSlides.length < 2) {
       slide = oldSlides[0];
       slide.volgnummer = 1;
     }
     else {
       for (var k = 0; k < oldSlides.length; k++) {
-        if (oldSlides[k].volgnummer === parseInt(oldFilename.replace(/^\D+/g, ''))) {
+
+        if (oldSlides[k].volgnummer === oldfileNumber) {
           slide = JSON.parse(JSON.stringify(oldSlides[k]));
           await new Promise<any>((resolve, reject) => {
             zwevendeSlides.splice(zwevendeSlides.findIndex((zwevendeSlide: any) => {
@@ -578,7 +587,7 @@ export class PresentatieController {
           slide.ID = undefined;
         }
       }
-      slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+      slide.volgnummer = newFileNumber;
     }
 
     slide.afbeelding = newFilename;
@@ -590,13 +599,18 @@ export class PresentatieController {
 
   async createNonExistingSlide(newFilename: any, presentatieID: number, newImages: any, newImage: any) {
     console.log("CreateNonExisting");
+
+    // Get new filenumber
+    let indexOfNewHyphen = newFilename.lastIndexOf("-");
+    let newFileNumber = parseInt(newFilename[indexOfNewHyphen + 1]);
+
     let slide = new Slide();
     slide.afbeelding = newFilename;
     if (newImages.length < 2) {
       slide.volgnummer = 1;
     }
     else {
-      slide.volgnummer = parseInt(newFilename.replace(/^\D+/g, ''));
+      slide.volgnummer = newFileNumber;
     }
     slide.presentatieID = presentatieID;
     await this.presentatieSlideController.create(presentatieID, slide);
