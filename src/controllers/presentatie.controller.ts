@@ -166,9 +166,6 @@ export class PresentatieController {
       //Create oswald entity
       if (presentatie.naam != undefined && presentatie.naam != null) {
         await this.updatePresentatieEntity(id, presentatie);
-
-        //Set new presentation URL
-        presentatie.url = presentatie.naam;
       }
 
       //Insert definition into DB
