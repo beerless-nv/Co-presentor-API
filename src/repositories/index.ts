@@ -9,3 +9,4 @@ export * from './synoniem.repository';
 export * from './user.repository';
 export * from './registration-token.repository';
 export * from './zwevende-tekst.repository';
+export * from './tts-instellingen.repository';

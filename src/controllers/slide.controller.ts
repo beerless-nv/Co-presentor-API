@@ -193,6 +193,27 @@ export class SlideController {
     await this.slideRepository.updateById(id, slide);
   }
 
+  @patch('/slides/bulk', {
+    responses: {
+      '204': {
+        description: 'Slide PATCH success',
+      },
+    },
+  })
+  @authenticate('jwt')
+  async updateBulk(
+    @requestBody({
+      content: {
+        'application/json': {},
+      },
+    })
+      slides: Array<any>,
+  ): Promise<void> {
+    slides.map(async slide => {
+      await this.slideRepository.updateById(slide.slide.ID, slide.slide);
+    });
+  }
+
   @put('/slides/{id}', {
     responses: {
       '204': {

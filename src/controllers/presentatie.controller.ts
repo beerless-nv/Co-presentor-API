@@ -159,18 +159,49 @@ export class PresentatieController {
 
     var databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }));
 
-    if (presentatie.naam != null && presentatie.naam != undefined && databankPresentatie.length != 0 && databankPresentatie[0].ID != id) {
+    if (presentatie.naam != null && databankPresentatie.length != 0 && databankPresentatie[0].ID != id) {
       throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
     }
     else {
       //Create oswald entity
-      if (presentatie.naam != undefined && presentatie.naam != null) {
+      if (presentatie.naam != undefined) {
         await this.updatePresentatieEntity(id, presentatie);
       }
 
       //Insert definition into DB
       return await this.presentatieRepository.updateById(id, presentatie);
     }
+  }
+
+  @patch('/presentaties/bulk', {
+    responses: {
+      '204': {
+        description: 'Presentatie PATCH success',
+      },
+    },
+  })
+  @authenticate('jwt')
+  async updateBulk(
+    @requestBody({
+      content: {
+        'application/json': {},
+      },
+    })
+      presentaties: Array<Presentatie>,
+  ): Promise<void> {
+    presentaties.map(async presentatie => {
+      const databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }));
+
+      if (presentatie.naam != null && databankPresentatie.length != 0 && databankPresentatie[0].ID != presentatie.ID) {
+        throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
+      }
+      else {
+        //Insert definition into DB
+        return await this.presentatieRepository.updateById(presentatie.ID, presentatie);
+      }
+    });
+
+    await this.updatePresentatiesEntities(presentaties);
   }
 
   @put('/presentaties/{id}', {
@@ -310,7 +341,7 @@ export class PresentatieController {
       "useForCorrections": true,
       "chatbotId": chatbotId,
       "labelId": entityLabelId
-    }
+    };
 
     //POST request
     await axios.default.post(baseUri + '/entity-labels/' + entityLabelId + '/values', body, options).catch(err => console.log(err)).then();
@@ -319,13 +350,13 @@ export class PresentatieController {
     //POST request to retrain chatbot
     const params = {
       'access_token': login['id']
-    }
+    };
     await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 
   async updatePresentatieEntity(id: number, presentatie: Presentatie) {
     // Get old presentation name to update oswald entity
-    var oudePresentatie = (await this.presentatieRepository.findById(id))
+    var oudePresentatie = (await this.presentatieRepository.findById(id));
 
     //Update oswald entity
     //Declarations
@@ -386,13 +417,83 @@ export class PresentatieController {
     //POST request to retrain chatbot
     const params = {
       'access_token': login['id']
-    }
+    };
+    await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
+  }
+
+  async updatePresentatiesEntities(presentaties: Array<Presentatie>) {
+    //Update oswald entity
+    //Declarations
+    const chatbotId = '5d2ee9d9dec3e57e85a478ce';
+    const baseUri = 'https://admin-api.oswald.ai/api/v1';
+    const entityLabelId = '5d4965c03a50663b1d6ab381';
+    let credentials = {
+      'email': process.env.OSWALD_USERNAME,
+      'password': process.env.OSWALD_PASSWORD,
+    };
+
+    //get login access token
+    const login = (await axios.default.post(baseUri + '/users/login', credentials))['data'];
+
+    await Promise.all(presentaties.map(async presentatie => {
+      const id = presentatie.ID;
+
+      // Get old presentation name to update oswald entity
+      const oudePresentatie = (await this.presentatieRepository.findById(id));
+
+      //Get old Oswald Entity
+      const oldoptions = {
+        'headers': {
+          'Content-Type': 'application/json',
+        },
+        'params': {
+          'access_token': login['id'],
+        },
+      };
+
+      //GET request for old entity
+      const entities = (await axios.default.get(baseUri + '/entity-labels/' + entityLabelId + '/values', oldoptions))['data'];
+      var oudeEntity = Object();
+
+
+      entities.forEach((entity: { value: { nl: string; }; }) => {
+        if (entity['value']['nl'] == oudePresentatie.naam) {
+          oudeEntity = entity;
+          //Naam veranderen
+          oudeEntity['value']['nl'] = presentatie.naam;
+        }
+      });
+
+      console.log(oudeEntity);
+
+
+      //add acces token to options
+      let options = {
+        'headers': {
+          'Content-Type': 'application/json',
+        },
+        'params': {
+          'access_token': login['id'],
+        },
+      };
+
+      const body = oudeEntity;
+
+      //PUT request
+      await axios.default.put(baseUri + '/entity-labels/' + entityLabelId + '/values/' + oudeEntity["id"], body, options).catch(err => console.log(err));
+    }));
+
+    //Move to production
+    //POST request to retrain chatbot
+    const params = {
+      'access_token': login['id']
+    };
     await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 
   async deletePresentatieEntity(presentatieID: number) {
     // Get old presentation name to update oswald entity
-    var presentatie = (await this.presentatieRepository.findById(presentatieID))
+    var presentatie = (await this.presentatieRepository.findById(presentatieID));
 
     //Update oswald entity
     //Declarations
@@ -450,7 +551,7 @@ export class PresentatieController {
     //POST request to retrain chatbot
     const params = {
       'access_token': login['id']
-    }
+    };
     await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 
@@ -459,7 +560,7 @@ export class PresentatieController {
     // Declarations for conversion
     var fs = require('fs');
     var cloudconvert = new (require('cloudconvert'))(process.env.CLOUDCONVERT);
-    var rawData = fs.readFileSync(process.env.GCS_KEYFILE)
+    var rawData = fs.readFileSync(process.env.GCS_KEYFILE);
     var keyfile = JSON.parse(rawData);
     var filename = files[0].originalname;
     var slideUrl = new Array<String>();
@@ -677,12 +778,12 @@ export class PresentatieController {
     let files = await this.getFiles(prefix);
 
     //Declarations for new images
-    var datum = new Date()
+    var datum = new Date();
     datum.setDate(datum.getDate() + 1);
     var config = {
       action: 'read',
       expires: datum,
-    }
+    };
 
     let Images: any = [];
 

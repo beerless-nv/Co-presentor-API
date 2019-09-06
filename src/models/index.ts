@@ -9,3 +9,4 @@ export * from './synoniem.model';
 export * from './user.model';
 export * from './registration-token.model';
 export * from './zwevende-tekst.model';
+export * from './tts-instellingen.model';
