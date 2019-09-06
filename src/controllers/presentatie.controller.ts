@@ -559,14 +559,24 @@ export class PresentatieController {
     // Get filenames
     let oldFilename = path.basename(oldImage.image);
     let slide = new Slide;
+    let newFileNumber;
+    let oldfileNumber;
 
     // Get old filenumber
-    let indexofoldHyphen = oldFilename.lastIndexOf("-");
-    let oldfileNumber = parseInt(oldFilename[indexofoldHyphen + 1]);
+    if (((oldFilename.lastIndexOf(".")) - (oldFilename.lastIndexOf("-"))) > 2) {
+      oldfileNumber = parseInt(oldFilename.substring(oldFilename.lastIndexOf("-") + 1, oldFilename.lastIndexOf(".")));
+    }
+    else {
+      oldfileNumber = parseInt(oldFilename[oldFilename.lastIndexOf("-") + 1])
+    }
 
     // Get new filenumber
-    let indexOfNewHyphen = newFilename.lastIndexOf("-");
-    let newFileNumber = parseInt(newFilename[indexOfNewHyphen + 1]);
+    if (((newFilename.lastIndexOf(".")) - (newFilename.lastIndexOf("-"))) > 2) {
+      newFileNumber = parseInt(newFilename.substring(newFilename.lastIndexOf("-") + 1, newFilename.lastIndexOf(".")));
+    }
+    else {
+      newFileNumber = parseInt(newFilename[newFilename.lastIndexOf("-") + 1])
+    }
 
     if (oldSlides.length < 2) {
       slide = oldSlides[0];
@@ -599,10 +609,17 @@ export class PresentatieController {
 
   async createNonExistingSlide(newFilename: any, presentatieID: number, newImages: any, newImage: any) {
     console.log("CreateNonExisting");
+    let newFileNumber;
 
     // Get new filenumber
-    let indexOfNewHyphen = newFilename.lastIndexOf("-");
-    let newFileNumber = parseInt(newFilename[indexOfNewHyphen + 1]);
+    if (((newFilename.lastIndexOf(".")) - (newFilename.lastIndexOf("-"))) > 2) {
+      newFileNumber = parseInt(newFilename.substring(newFilename.lastIndexOf("-") + 1, newFilename.lastIndexOf(".")));
+    }
+    else {
+      newFileNumber = parseInt(newFilename[newFilename.lastIndexOf("-") + 1])
+    }
+
+    console.log(newFileNumber);
 
     let slide = new Slide();
     slide.afbeelding = newFilename;
