@@ -56,11 +56,19 @@ export class PresentatieController {
       //Create oswald entity
       await this.createPresentatieEntity(presentatie.naam);
 
-      //Set presentation URL
-      presentatie.url = (presentatie.ID!).toString();
+
 
       //Insert definition into DB
-      return await this.presentatieRepository.create(presentatie);
+      let newPresentatie = await this.presentatieRepository.create(presentatie);
+
+      //Set url as ID
+      newPresentatie.url = newPresentatie.ID!.toString();
+
+      // Update presentatie
+      await this.presentatieRepository.updateById(newPresentatie.ID, newPresentatie);
+
+      // Return presentatie object
+      return newPresentatie;
     }
     else {
       throw new HttpErrors[422]('Een presentatie met deze naam bestaat al!');
