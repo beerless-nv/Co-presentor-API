@@ -641,7 +641,9 @@ export class PresentatieController {
       }
     };
 
-    return (await axios.default.post("https://api.cloudconvert.com/v1/process", body)).data;
+    let cloudconvertProcess = (await axios.default.post("https://api.cloudconvert.com/v1/process", body)).data;
+
+    return (await axios.default.post("https:" + cloudconvertProcess.url, body)).data;
   }
 
   async getFiles(prefix: any) {
