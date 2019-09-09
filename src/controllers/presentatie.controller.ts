@@ -187,7 +187,7 @@ export class PresentatieController {
         'application/json': {},
       },
     })
-      presentaties: Array<Presentatie>,
+    presentaties: Array<Presentatie>,
   ): Promise<void> {
     presentaties.map(async presentatie => {
       const databankPresentatie = (await this.find({ where: { naam: presentatie.naam } }));
@@ -246,7 +246,7 @@ export class PresentatieController {
   }
 
   // Upload new presentation router
-  @post('/uploadPresentatie/{id}/{naam}', {
+  @get('/uploadPresentatie/{id}/{naam}', {
     responses: {
       200: {
         content: {
@@ -263,47 +263,91 @@ export class PresentatieController {
   @authenticate('jwt')
   // Method to upload presentation
   async uploadPresentatie(
-    @requestBody({
-      description: 'multipart/form-data value.',
-      required: true,
-      content: {
-        'multipart/form-data': {
-          // Skip body parsing
-          'x-parser': 'stream',
-          schema: { type: 'object' },
-        }
-      },
-    })
-    request: Request,
-    @inject(RestBindings.Http.RESPONSE) response: Response,
     @param.path.number('id') id: number,
     @param.path.string('naam') naam: string
   ): Promise<object> {
-    // Storing pptx in multer memory
-    const storage = multer.memoryStorage();
-    const upload = multer({ storage });
-    return new Promise<object>((resolve, reject) => {
-      upload.any()(request, response, async err => {
-        if (err) return reject(err);
+    // // Storing pptx in multer memory
+    // const storage = multer.memoryStorage();
+    // const upload = multer({ storage });
+    // return new Promise<object>((resolve, reject) => {
+    //   upload.any()(request, response, async err => {
+    //     if (err) return reject(err);
 
-        let result;
+    //     let result;
 
-        //Get old slides
-        let slides = await this.presentatieSlideController.find(id);
+    // //Get old slides
+    // let slides = await this.presentatieSlideController.find(id);
 
-        // Delete old db slides
-        await this.presentatieSlideController.delete(id);
+    // // Delete old db slides
+    // await this.presentatieSlideController.delete(id);
 
-        // Converting memory stored pptx
-        await this.convertPPTx(request.files, naam, id, slides);
+    //     // Converting memory stored pptx
+    //     await this.convertPPTx(request.files, naam, id, slides);
 
 
-        resolve({
-          files: request.file,
-          fields: (request as any).fields,
-        });
-      });
-    });
+    //     resolve({
+    //       files: request.file,
+    //       fields: (request as any).fields,
+    //     });
+    //   });
+    // });
+
+    // New code create slides from upload
+    //Get old slides
+    let oldSlides = await this.presentatieSlideController.find(id);
+
+    // Delete old db slides
+    await this.presentatieSlideController.delete(id);
+
+    // Declarations for conversion
+    // var fs = require('fs');
+    // var cloudconvert = new (require('cloudconvert'))(process.env.CLOUDCONVERT);
+    // var rawData = fs.readFileSync(process.env.GCS_KEYFILE);
+    // var keyfile = JSON.parse(rawData);
+    // var filename = files[0].originalname;
+
+    let zwevendeSlides = JSON.parse(JSON.stringify(oldSlides));
+    let newSlides = new Array<Slide>();
+
+    // Get presentation name
+    var presentatie = await this.presentatieRepository.findById(id);
+
+    //Get slides
+    let newImages = await this.getSlides(presentatie.url + '/new/');
+    let oldImages = await this.getSlides(presentatie.url + '/old/');
+
+    for (var i = 0; i < newImages.length; i++) {
+      let exists = false;
+      let newFilename = path.basename(newImages[i].image);
+      for (var j = 0; j < oldImages.length; j++) {
+        if (newImages[i].hash === oldImages[j].hash && !newImages[i].bekeken) {
+          // Found same image
+          exists = true;
+
+          //Create existing slide
+          await this.createExistingSlide(oldSlides, oldImages[j], id, newFilename, newImages[i], zwevendeSlides, newSlides)
+
+        }
+      }
+      if (!exists) {
+        // Create non existing slide
+        await this.createNonExistingSlide(newFilename, id, newImages, newImages[i]);
+      }
+    }
+
+    // Create floating text
+    await this.createFloatingText(zwevendeSlides, id);
+
+    // Delete old files
+    await this.deleteSlides(presentatie.url + '/old/');
+
+    // Get new files
+    let files = await this.getFiles(presentatie.url + '/new/');
+
+    //Move new files to old
+    await this.moveSlides(files, presentatie.url + '/old/');
+
+    return newSlides;
   }
 
   async createPresentatieEntity(naam: string) {
@@ -555,85 +599,49 @@ export class PresentatieController {
     await axios.default.post(baseUri + '/chatbots/' + chatbotId + '/move-to-production', {}, { params: params }).catch(err => console.log(err));
   }
 
-  // Methoed for converting PPTX to JPG
-  async convertPPTx(files: any, presentatienaam: string, presentatieID: number, oldSlides: Slide[]) {
+  // Method for converting PPTX to JPG
+  // Upload new presentation router
+  @get('/convertPresentatie/{naam}', {
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+            },
+          },
+        },
+        description: '',
+      },
+    },
+  })
+  // @authenticate('jwt')
+  // Method to upload presentation
+  async convertPresentatie(
+    @param.path.string('naam') naam: string
+  ): Promise<any> {
     // Declarations for conversion
     var fs = require('fs');
     var cloudconvert = new (require('cloudconvert'))(process.env.CLOUDCONVERT);
     var rawData = fs.readFileSync(process.env.GCS_KEYFILE);
     var keyfile = JSON.parse(rawData);
-    var filename = files[0].originalname;
-    var slideUrl = new Array<String>();
-    var teller = 1;
-    let zwevendeSlides = JSON.parse(JSON.stringify(oldSlides));
-    let newSlides = new Array<Slide>();
 
-    //remove old slides
-    // await this.removePresentatieSlides(presentatieID);
-
-    // Convert PPTX(base64 string) to JPG
-    cloudconvert.convert({
+    let body = {
       "apikey": process.env.CLOUDCONVERT,
       "inputformat": "pptx",
       "outputformat": "jpg",
-      "input": "base64",
-      "file": files[0].buffer.toString("base64"),
-      "filename": filename,
+      "input": "upload",
       "output": {
         "googlecloud": {
           "projectid": process.env.GCLOUD_PROJECT,
           "bucket": process.env.GCS_BUCKET,
           "credentials": keyfile,
-          "path": presentatienaam + "/new/"
+          "path": naam + "/new/"
         }
       }
-    }, async (err: any, result: any) => {
+    };
 
-      // Check if error
-      if (err) {
-        throw new HttpErrors[422](err);
-      }
-
-      // Get presentation name
-      var presentatie = await this.presentatieRepository.findById(presentatieID);
-
-      //Get slides
-      let newImages = await this.getSlides(presentatie.url + '/new/');
-      let oldImages = await this.getSlides(presentatie.url + '/old/');
-
-      for (var i = 0; i < newImages.length; i++) {
-        let exists = false;
-        let newFilename = path.basename(newImages[i].image);
-        for (var j = 0; j < oldImages.length; j++) {
-          if (newImages[i].hash === oldImages[j].hash && !newImages[i].bekeken) {
-            // Found same image
-            exists = true;
-
-            //Create existing slide
-            await this.createExistingSlide(oldSlides, oldImages[j], presentatieID, newFilename, newImages[i], zwevendeSlides, newSlides)
-
-          }
-        }
-        if (!exists) {
-          // Create non existing slide
-          await this.createNonExistingSlide(newFilename, presentatieID, newImages, newImages[i]);
-        }
-      }
-
-      // Create floating text
-      await this.createFloatingText(zwevendeSlides, presentatieID);
-
-      // Delete old files
-      await this.deleteSlides(presentatie.url + '/old/');
-
-      // Get new files
-      let files = await this.getFiles(presentatie.url + '/new/');
-
-      //Move new files to old
-      await this.moveSlides(files, presentatie.url + '/old/');
-
-      return "Upload Success";
-    });
+    return (await axios.default.post("https://api.cloudconvert.com/v1/process", body)).data;
   }
 
   async getFiles(prefix: any) {
