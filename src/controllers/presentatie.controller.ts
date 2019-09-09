@@ -57,7 +57,7 @@ export class PresentatieController {
       await this.createPresentatieEntity(presentatie.naam);
 
       //Set presentation URL
-      presentatie.url = presentatie.naam;
+      presentatie.url = (presentatie.ID!).toString();
 
       //Insert definition into DB
       return await this.presentatieRepository.create(presentatie);
@@ -246,7 +246,7 @@ export class PresentatieController {
   }
 
   // Upload new presentation router
-  @get('/uploadPresentatie/{id}/{naam}', {
+  @get('/createSlides/{id}/{naam}', {
     responses: {
       200: {
         content: {
@@ -262,7 +262,7 @@ export class PresentatieController {
   })
   @authenticate('jwt')
   // Method to upload presentation
-  async uploadPresentatie(
+  async createSlides(
     @param.path.number('id') id: number,
     @param.path.string('naam') naam: string
   ): Promise<object> {
@@ -601,7 +601,7 @@ export class PresentatieController {
 
   // Method for converting PPTX to JPG
   // Upload new presentation router
-  @get('/convertPresentatie/{naam}', {
+  @get('/generateUploadLink/{id}', {
     responses: {
       200: {
         content: {
@@ -618,7 +618,7 @@ export class PresentatieController {
   // @authenticate('jwt')
   // Method to upload presentation
   async convertPresentatie(
-    @param.path.string('naam') naam: string
+    @param.path.number('id') id: number
   ): Promise<any> {
     // Declarations for conversion
     var fs = require('fs');
@@ -636,7 +636,7 @@ export class PresentatieController {
           "projectid": process.env.GCLOUD_PROJECT,
           "bucket": process.env.GCS_BUCKET,
           "credentials": keyfile,
-          "path": naam + "/new/"
+          "path": id + "/new/"
         }
       }
     };
