@@ -17,14 +17,11 @@ var jwt_decode = require('jwt-decode');
 
 export class SendMessagesController {
 
-  // registrationToken: any;
-
   constructor(
     @inject(RestBindings.Http.REQUEST) public request: Request,
     @inject(TokenServiceBindings.TOKEN_SERVICE) public jwtService: TokenService,
     @inject('controllers.UserRegistrationTokenController') public userRegistrationTokenController: UserRegistrationTokenController,
   ) {
-    // this.registrationToken = process.env.FCM_ANDROID_REGISTRATION_TOKEN;
   }
 
   @get('/sendMessage/startListening', {
@@ -34,7 +31,7 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async startListening(): Promise<any> {
     this.sendMessageToDevice('0');
   }
@@ -46,7 +43,7 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async stopListening(): Promise<any> {
     this.sendMessageToDevice('1');
   }
@@ -58,7 +55,7 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async nextSlide(): Promise<any> {
     this.sendMessageToDevice('2');
   }
@@ -70,7 +67,7 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async previousSlide(): Promise<any> {
     this.sendMessageToDevice('3');
   }
@@ -82,7 +79,7 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async enterFullScreen(): Promise<any> {
     this.sendMessageToDevice('4');
   }
@@ -94,9 +91,21 @@ export class SendMessagesController {
       },
     },
   })
-  // @authenticate('jwt')
+  @authenticate('jwt')
   async exitFullScreen(): Promise<any> {
     this.sendMessageToDevice('5');
+  }
+
+  @get('/sendMessage/startSpeaking', {
+    responses: {
+      '200': {
+        description: 'Co-presenter starts speaking',
+      },
+    },
+  })
+  @authenticate('jwt')
+  async startSpeaking(): Promise<any> {
+    this.sendMessageToDevice('6');
   }
 
   async sendMessageToDevice(title: string) {

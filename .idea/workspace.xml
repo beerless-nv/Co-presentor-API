@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="eba4f035-84f0-4bb6-b50f-8fb198e46f51" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/definitie.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/definitie.controller.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/presentatie.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/presentatie.controller.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/slide.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/slide.controller.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/repositories/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/repositories/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/send-messages.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/send-messages.controller.ts" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -26,7 +20,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/dist/index.js" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Co-presentor-dashboard" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="$PROJECT_DIR$/../../../../../Tom Nuyts/Dropbox/Projecten/Project Co-presentator/API/co-presenter/node_modules/eslint" />
@@ -86,7 +80,8 @@
       <workItem from="1567579762585" duration="842000" />
       <workItem from="1567597512765" duration="1311000" />
       <workItem from="1567667565764" duration="5872000" />
-      <workItem from="1567749462355" duration="9287000" />
+      <workItem from="1567749462355" duration="10829000" />
+      <workItem from="1568013602216" duration="7216000" />
     </task>
     <servers />
   </component>
@@ -116,27 +111,27 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/controllers/presentatie.controller.ts</url>
-          <line>229</line>
+          <line>237</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/controllers/presentatie.controller.ts</url>
-          <line>231</line>
+          <line>239</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/controllers/presentatie.controller.ts</url>
-          <line>232</line>
+          <line>240</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/controllers/presentatie.controller.ts</url>
-          <line>234</line>
+          <line>242</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/controllers/presentatie.controller.ts</url>
-          <line>237</line>
+          <line>245</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
       </breakpoints>
