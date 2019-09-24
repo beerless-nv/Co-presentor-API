@@ -26,7 +26,7 @@ import { inject } from '@loopback/context';
 import { SlideRepository } from '../repositories';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import { resolve } from 'path';
-import {PresentatieController, PresentatieSlideController} from '.';
+import { PresentatieController, PresentatieSlideController } from '.';
 import { Application } from '@loopback/core';
 import * as multer from 'multer';
 import { runInNewContext } from 'vm';
@@ -208,7 +208,7 @@ export class SlideController {
         'application/json': {},
       },
     })
-      slides: Array<any>,
+    slides: Array<any>,
   ): Promise<void> {
     slides.map(async slide => {
       await this.slideRepository.updateById(slide.slide.ID, slide.slide);
@@ -485,9 +485,12 @@ export class SlideController {
   ): Promise<Presentatie[]> {
     const presentaties = await this.presentatieController.find();
 
+
     await Promise.all(
       presentaties.map(async presentatie => {
-        presentatie.slides = await this.find({where: {presentatieID: presentatie.ID}});
+        var slides = await this.find({ where: { presentatieID: presentatie.ID } });
+        var slides = slides.sort(function (a, b) { return a.slide.volgnummer - b.slide.volgnummer });
+        presentatie.slides = slides;
       })
     );
 
