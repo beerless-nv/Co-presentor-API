@@ -26,7 +26,7 @@ import { inject } from '@loopback/context';
 import { SlideRepository } from '../repositories';
 import * as GoogleCloudStorage from '@google-cloud/storage';
 import { resolve } from 'path';
-import { PresentatieController } from '.';
+import {PresentatieController, PresentatieSlideController} from '.';
 import { Application } from '@loopback/core';
 import * as multer from 'multer';
 import { runInNewContext } from 'vm';
@@ -38,6 +38,7 @@ export class SlideController {
     @repository(SlideRepository)
     public slideRepository: SlideRepository,
     @inject('controllers.PresentatieController') public presentatieController: PresentatieController,
+    @inject('controllers.PresentatieSlideController') public presentatieSlideController: PresentatieSlideController,
   ) { }
 
   @post('/slides', {
@@ -255,20 +256,20 @@ export class SlideController {
     const bucket = storage.bucket(BUCKETNAME!);
 
     // Get presentation name
-    var presentatie = await this.presentatieController.findById(presentatieId)
+    var presentatie = await this.presentatieController.findById(presentatieId);
 
 
     // Get File
     var filepath = '/' + presentatie.url + '/old/' + filename;
     var file = bucket.file(filepath);
-    var datum = new Date()
+    var datum = new Date();
     datum.setDate(datum.getDate() + 1);
 
     // Create config for signed url
     var config = {
       action: 'read',
       expires: datum,
-    }
+    };
 
     // get signed url
     return (await file.getSignedUrl(config))[0];
@@ -291,14 +292,14 @@ export class SlideController {
     // Get File
     var filepath = 'video/' + slide.video;
     var file = bucket.file(filepath);
-    var datum = new Date()
+    var datum = new Date();
     datum.setDate(datum.getDate() + 1);
 
     // Create config for signed url
     var config = {
       action: 'read',
       expires: datum,
-    }
+    };
 
     // get signed url
     return (await file.getSignedUrl(config))[0];
@@ -379,7 +380,7 @@ export class SlideController {
           this.presentatieController.findById(slide.presentatieID).then(async (presentatie: Presentatie) => {
             slide.video = presentatie.naam + '/' + slide.volgnummer + '/' + req.file.originalname;
             await this.updateById(id, slide);
-            const blob = bucket.file("video/" + presentatie.naam + '/' + slide.volgnummer + '/' + req.file.originalname)
+            const blob = bucket.file("video/" + presentatie.naam + '/' + slide.volgnummer + '/' + req.file.originalname);
             console.log(slide);
 
             // Blob declaration
@@ -456,13 +457,40 @@ export class SlideController {
       slide.video = undefined;
       let result = await this.updateById(id, slide);
 
-      console.log("Voor return result")
+      console.log("Voor return result");
       // Return result
       return result
     }
     else {
-      console.log("Return in else")
+      console.log("Return in else");
       return;
     }
+  }
+
+  @get('/presentaties/slides', {
+    responses: {
+      '200': {
+        description: 'Array of Presentatie model instances with their slides',
+        content: {
+          'application/json': {
+            schema: { type: 'array', items: { 'x-ts-type': Presentatie } },
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  async findWithSlides(
+    @param.query.object('filter', getFilterSchemaFor(Presentatie)) filter?: Filter<Presentatie>,
+  ): Promise<Presentatie[]> {
+    const presentaties = await this.presentatieController.find();
+
+    await Promise.all(
+      presentaties.map(async presentatie => {
+        presentatie.slides = await this.find({where: {presentatieID: presentatie.ID}});
+      })
+    );
+
+    return presentaties;
   }
 }

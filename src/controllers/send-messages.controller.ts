@@ -1,4 +1,3 @@
-// import {inject} from '@loopback/context';
 import * as admin from 'firebase-admin';
 import {
   get,
@@ -11,7 +10,7 @@ import {
 } from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {TokenServiceBindings} from '../keys';
-import {PresentatieSlideController} from './presentatie-slide.controller';
+import {RegistrationTokenController} from './registration-token.controller';
 import {UserRegistrationTokenController} from './user-registration-token.controller';
 var jwt_decode = require('jwt-decode');
 
@@ -21,6 +20,7 @@ export class SendMessagesController {
     @inject(RestBindings.Http.REQUEST) public request: Request,
     @inject(TokenServiceBindings.TOKEN_SERVICE) public jwtService: TokenService,
     @inject('controllers.UserRegistrationTokenController') public userRegistrationTokenController: UserRegistrationTokenController,
+    @inject('controllers.RegistrationTokenController') public registrationTokenController: RegistrationTokenController,
   ) {
   }
 
@@ -108,7 +108,19 @@ export class SendMessagesController {
     this.sendMessageToDevice('6');
   }
 
-  async sendMessageToDevice(title: string) {
+  @get('/sendMessage/startVideo', {
+    responses: {
+      '200': {
+        description: 'Co-presenter plays included video',
+      },
+    },
+  })
+  @authenticate('jwt')
+  async startVideo(): Promise<any> {
+    this.sendMessageToDevice('7');
+  }
+
+  async sendMessageToDevice(msg: string) {
     // get registrationToken from current user
     let jwtToken, user, registrationTokens;
 
@@ -119,9 +131,8 @@ export class SendMessagesController {
 
       // create payload
       const payload = {
-        notification: {
-          title: title,
-          body: '',
+        data: {
+          msg: msg,
         },
       };
       const options = {
@@ -131,13 +142,20 @@ export class SendMessagesController {
 
       // send message
       if (registrationTokens.length > 0) {
-        admin.messaging().sendToDevice(registrationTokens[0].token, payload, options)
-          .then(function(response) {
-            console.log("Successfully sent message:", response);
-          })
-          .catch(function(error) {
-            console.log("Error sending message:", error);
-          });
+        registrationTokens.map(registrationToken => {
+          admin.messaging().sendToDevice(registrationToken.token, payload, options)
+            .then(response => {
+              console.log("Successfully sent message:", response);
+              if (response.results[0].error) {
+                if (response.results[0].error.code === 'messaging/registration-token-not-registered') {
+                  this.registrationTokenController.deleteById(registrationToken.ID!);
+                }
+              }
+            })
+            .catch(error => {
+              console.log(error);
+            });
+        });
       }
     }
   }
