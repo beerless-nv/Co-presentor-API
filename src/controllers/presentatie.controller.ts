@@ -274,31 +274,7 @@ export class PresentatieController {
     @param.path.number('id') id: number,
     @param.path.string('naam') naam: string
   ): Promise<object> {
-    // // Storing pptx in multer memory
-    // const storage = multer.memoryStorage();
-    // const upload = multer({ storage });
-    // return new Promise<object>((resolve, reject) => {
-    //   upload.any()(request, response, async err => {
-    //     if (err) return reject(err);
 
-    //     let result;
-
-    // //Get old slides
-    // let slides = await this.presentatieSlideController.find(id);
-
-    // // Delete old db slides
-    // await this.presentatieSlideController.delete(id);
-
-    //     // Converting memory stored pptx
-    //     await this.convertPPTx(request.files, naam, id, slides);
-
-
-    //     resolve({
-    //       files: request.file,
-    //       fields: (request as any).fields,
-    //     });
-    //   });
-    // });
 
     // New code create slides from upload
     //Get old slides
@@ -307,13 +283,7 @@ export class PresentatieController {
     // Delete old db slides
     await this.presentatieSlideController.delete(id);
 
-    // Declarations for conversion
-    // var fs = require('fs');
-    // var cloudconvert = new (require('cloudconvert'))(process.env.CLOUDCONVERT);
-    // var rawData = fs.readFileSync(process.env.GCS_KEYFILE);
-    // var keyfile = JSON.parse(rawData);
-    // var filename = files[0].originalname;
-
+    // Declarationss
     let zwevendeSlides = JSON.parse(JSON.stringify(oldSlides));
     let newSlides = new Array<Slide>();
 
@@ -324,6 +294,8 @@ export class PresentatieController {
     let newImages = await this.getSlides(presentatie.url + '/new/');
     let oldImages = await this.getSlides(presentatie.url + '/old/');
 
+
+    // Create new slides based on existing or non existing images
     for (var i = 0; i < newImages.length; i++) {
       let exists = false;
       let newFilename = path.basename(newImages[i].image);
