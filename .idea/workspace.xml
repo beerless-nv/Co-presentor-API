@@ -3,8 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="eba4f035-84f0-4bb6-b50f-8fb198e46f51" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/send-messages.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/send-messages.controller.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/slide.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/slide.controller.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/registration-token.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/registration-token.controller.ts" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -21,7 +20,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Beerless/Beerless-website" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
     <property name="node.js.selected.package.eslint" value="$PROJECT_DIR$/../../../../../Tom Nuyts/Dropbox/Projecten/Project Co-presentator/API/co-presenter/node_modules/eslint" />
@@ -92,7 +91,8 @@
       <workItem from="1568877214326" duration="4362000" />
       <workItem from="1568979689984" duration="710000" />
       <workItem from="1569228073598" duration="630000" />
-      <workItem from="1569308897160" duration="652000" />
+      <workItem from="1569308897160" duration="1365000" />
+      <workItem from="1569407718243" duration="967000" />
     </task>
     <servers />
   </component>
