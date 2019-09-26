@@ -30,7 +30,11 @@
     <property name="ts.external.directory.path" value="C:\Users\nuytsto\Documents\Projecten\Project Co-presentator\Co-presentor-API\node_modules\typescript\lib" />
   </component>
   <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\nuytsto\Documents\Projecten\Project Co-presentator\Co-presentor-API" />
+    </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\nuytsto\Documents\Projecten\Project Co-presentator\Co-presentor-API" />
       <recent name="C:\Users\Tom Nuyts\Dropbox\Projecten\Project Co-presentator\API\co-presenter" />
       <recent name="C:\Users\Tom Nuyts\Dropbox\Projecten\Project Co-presentator\API\co-presenter\src\datasources" />
     </key>
@@ -92,7 +96,10 @@
       <workItem from="1568979689984" duration="710000" />
       <workItem from="1569228073598" duration="630000" />
       <workItem from="1569308897160" duration="1365000" />
-      <workItem from="1569407718243" duration="967000" />
+      <workItem from="1569407718243" duration="2270000" />
+      <workItem from="1569481909800" duration="996000" />
+      <workItem from="1569495323796" duration="626000" />
+      <workItem from="1569499106700" duration="384000" />
     </task>
     <servers />
   </component>

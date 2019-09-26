@@ -48,9 +48,7 @@ export class RegistrationTokenController {
       registrationToken: Omit<RegistrationToken, 'id'>,
   ): Promise<any> {
     const registrationTokenMatches = await this.find({where: {and: [{token: registrationToken.token}, {userId: registrationToken.userId}]}});
-    if (registrationTokenMatches.length > 0) {
-      return;
-    } else {
+    if (registrationTokenMatches.length === 0) {
       return await this.registrationTokenRepository.create(registrationToken);
     }
   }
